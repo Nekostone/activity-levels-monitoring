@@ -51,5 +51,10 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
+# Python
 .idea
 .venv
+__pycache__
+catstone.egg-info
+.vscode
+.pytest_cache
