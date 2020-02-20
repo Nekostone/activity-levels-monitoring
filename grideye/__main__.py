@@ -2,8 +2,8 @@ import serial
 import time
 import csv
 import numpy as np
+from csv_utils import to_csv
 import matplotlib.pyplot as plt
-
 
 # Serial parameters
 serial_port = 'COM3'
@@ -19,7 +19,6 @@ num = 200
 # 1: Saved data mode. File is saved to current working directory. File is saved as yyyymmdd_hhmmss.csv
 mode = 0
 
-counter = 0
 
 def plot(data):
     d = np.array(data)
@@ -31,20 +30,12 @@ def plot(data):
     plt.clf() 
     return d
 
-def to_csv(data,file):
-    curr_time = time.time()
-    data.insert(0, curr_time)
-    with open(file, "a", newline = '') as f:
-        writer = csv.writer(f, delimiter=",")
-        writer.writerow(data)
-
-def run_arduino(mode): # 0: plot mode, 1: csv mode
+def run_arduino(mode: int, counter: int): # 0: plot mode, 1: csv mode
     curr_time = time.time()
     filename = time.strftime("%Y%m%d_%H%M%S",time.localtime(curr_time)) + "_grideye.csv"
     ser = serial.Serial(serial_port, baud_rate)
     ser.flushInput()
     
-    global counter
     while counter < num:
         try:
             ser_bytes = ser.readline()
@@ -72,10 +63,12 @@ def run_arduino(mode): # 0: plot mode, 1: csv mode
                 
             else:
                 continue
-                
+        
+        except KeyboardInterrupt:
+					  raise
         except Exception as e:
             print(e)
             break
 
-
-run_arduino(mode)
+if __name__ == "__main__":
+  run_arduino(mode, counter=600)
