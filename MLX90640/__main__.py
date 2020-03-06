@@ -6,7 +6,7 @@ from csv_utils import to_csv
 import matplotlib.pyplot as plt
 
 # Serial parameters
-serial_port = 'COM3'
+serial_port = 'COM4'
 baud_rate = 115200
 start_byte = b'\r\n'
 
@@ -22,7 +22,7 @@ mode = 0
 
 def plot(data):
     d = np.array(data)
-    d = np.reshape(d, (8,8))
+    d = np.reshape(d, (24,32))
     plt.imshow(d, cmap='hot', interpolation='nearest')
     plt.colorbar()
     plt.clim(25,40)
@@ -35,35 +35,28 @@ def run_arduino(mode: int, counter: int): # 0: plot mode, 1: csv mode
     filename = time.strftime("%Y%m%d_%H%M%S",time.localtime(curr_time)) + "_grideye.csv"
     ser = serial.Serial(serial_port, baud_rate)
     ser.flushInput()
-    
+
+    # ignore initialization statements
+    ser.readline()
+    ser.readline()
+    ser.readline()
+    ser.readline()
+
     while counter < num:
         try:
             ser_bytes = ser.readline()
-            if ser_bytes == start_byte:
-                data_frame = [0] * 64
-                for i in range(64):
-                    try:
-                        ser_bytes = ser.readline()
-                        decoded_bytes = float(ser_bytes[0:-2].decode("utf-8"))
-                        data_frame[i] = decoded_bytes
-                        
-                    except Exception as e:
-                        print(e)
-                        print(ser_bytes)
-                        break
-                
-                print(data_frame)
-                if mode == 0:
-                    plot(data_frame)
-                    
-                elif mode == 1:
-                    to_csv(data_frame,filename)
-                    
-                counter += 1
-                
-            else:
-                continue
-        
+            decoded_string = ser_bytes.decode("utf-8").strip("\r\n")
+            values = decoded_string.split(",")[:-1]
+            data_frame = np.reshape(np.array(values).astype(float), (24,32))
+
+            if mode == 0:
+                plot(data_frame)
+
+            elif mode == 1:
+                to_csv(data_frame,filename)
+
+            counter += 1
+
         except KeyboardInterrupt:
             raise
         except Exception as e:
@@ -71,4 +64,5 @@ def run_arduino(mode: int, counter: int): # 0: plot mode, 1: csv mode
             break
 
 if __name__ == "__main__":
-  run_arduino(mode, counter=600)
+    run_arduino(mode, counter=0)
+
