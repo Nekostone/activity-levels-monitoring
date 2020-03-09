@@ -26,7 +26,9 @@ def plot(data):
     plt.imshow(d, cmap='hot', interpolation='nearest')
     plt.colorbar()
     plt.clim(25,40)
-    plt.pause(0.05) # plt pause allows the plotter time to catch up with the data
+    plt.title(time.time())
+    plt.pause(0.1) # plt pause allows the plotter time to catch up with the data
+
     plt.clf() 
     return d
 
