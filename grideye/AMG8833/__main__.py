@@ -65,7 +65,7 @@ def run_arduino(mode: int, counter: int): # 0: plot mode, 1: csv mode
                 continue
         
         except KeyboardInterrupt:
-					  raise
+            raise
         except Exception as e:
             print(e)
             break

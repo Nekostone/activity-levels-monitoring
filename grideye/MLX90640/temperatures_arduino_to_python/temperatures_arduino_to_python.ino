@@ -27,7 +27,6 @@
 */
 
 #include <Wire.h>
-
 #include "MLX90640_API.h"
 #include "MLX90640_I2C_Driver.h"
 
@@ -41,8 +40,7 @@ paramsMLX90640 mlx90640;
 void setup()
 {
   Wire.begin();
-  Wire.setClock(400000); //Increase I2C clock speed to 400kHz
-
+  //Wire.setClock(400000); //Set I2C clock speed 
   Serial.begin(115200); //Fast serial as possible
   
   while (!Serial); //Wait for user to open terminal
@@ -68,8 +66,8 @@ void setup()
   //Once params are extracted, we can release eeMLX90640 array
 
   //MLX90640_SetRefreshRate(MLX90640_address, 0x02); //Set rate to 2Hz
-  MLX90640_SetRefreshRate(MLX90640_address, 0x03); //Set rate to 4Hz
-  //MLX90640_SetRefreshRate(MLX90640_address, 0x07); //Set rate to 64Hz
+  MLX90640_SetRefreshRate(MLX90640_address, 0x03); //Set rate to poopy Hz
+  //MLX90640_SetRefreshRate(MLX90640_address, 0x06); //Set rate to 64Hz
 }
 
 void loop()
@@ -107,4 +105,3 @@ boolean isConnected()
     return (false); //Sensor did not ACK
   return (true);
 }
-

@@ -15,7 +15,7 @@
 
 */
 
-
+#include <Arduino.h>
 #include <Wire.h>
 
 #include "MLX90640_I2C_Driver.h"
@@ -106,4 +106,3 @@ int MLX90640_I2CWrite(uint8_t _deviceAddress, unsigned int writeAddress, uint16_
 
   return (0); //Success
 }
-
