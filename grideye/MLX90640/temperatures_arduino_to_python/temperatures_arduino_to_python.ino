@@ -40,7 +40,7 @@ paramsMLX90640 mlx90640;
 void setup()
 {
   Wire.begin();
-  //Wire.setClock(200000); //Set I2C clock speed 
+  //Wire.setClock(400000); //Set I2C clock speed 
   Serial.begin(115200); //Fast serial as possible
   
   while (!Serial); //Wait for user to open terminal
@@ -66,7 +66,7 @@ void setup()
   //Once params are extracted, we can release eeMLX90640 array
 
   //MLX90640_SetRefreshRate(MLX90640_address, 0x02); //Set rate to 2Hz
-  MLX90640_SetRefreshRate(MLX90640_address, 0x00); //Set rate to poopy Hz
+  MLX90640_SetRefreshRate(MLX90640_address, 0x03); //Set rate to poopy Hz
   //MLX90640_SetRefreshRate(MLX90640_address, 0x06); //Set rate to 64Hz
 }
 

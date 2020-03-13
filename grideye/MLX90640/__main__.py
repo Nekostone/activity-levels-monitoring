@@ -26,8 +26,7 @@ def plot(data):
     plt.imshow(d, cmap='hot', interpolation='nearest')
     plt.colorbar()
     plt.clim(25,40)
-    plt.title(time.time())
-    plt.pause(0.1) # plt pause allows the plotter time to catch up with the data
+    plt.pause(0.05) # plt pause allows the plotter time to catch up with the data
 
     plt.clf() 
     return d
@@ -52,6 +51,7 @@ def run_arduino(mode: int, counter: int): # 0: plot mode, 1: csv mode
             data_frame = np.reshape(np.array(values).astype(float), (24,32))
 
             if mode == 0:
+                #print(data_frame)
                 plot(data_frame)
 
             elif mode == 1:

@@ -15,9 +15,7 @@
 
 */
 
-
-
-#include<Arduino.h>
+#include <Arduino.h>
 #include <Wire.h>
 
 #include "MLX90640_I2C_Driver.h"
