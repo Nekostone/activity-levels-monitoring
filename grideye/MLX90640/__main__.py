@@ -20,16 +20,44 @@ num = 200
 mode = 0
 
 
-def plot(data):
-    d = np.array(data)
-    d = np.reshape(d, (24,32))
+def get_nan_value_indices(array):
+  """
+  returns indices of nan values in an array of [row, column]
+  """
+  return np.argwhere(np.isnan(array))
+
+def interpolate_values(array, nan_value_indices):
+    """
+    :param 24x32 array:
+    :param result obtained from get_nan_value_indices(data_frame):
+    :return: 24x32 array
+    """
+    for indx in nan_value_indices:
+        x = indx[0]
+        y = indx[1]
+        array[x][y] = (array[x][y+1] + array[x+1][y] + array[x-1][y] + array[x][y-1]) / 4
+    return array
+
+def section_grid(array):
+    """
+    :param array: 24x32 array
+    :return: 8x12x8 array
+    """
+    result = np.zeros((8, 12, 8))
+    block_number = 0
+    for i in range(2):
+        for j in range(4):
+            result[block_number] = array[i * 12:(i + 1) * 12, j * 8:(j + 1) * 8]
+            block_number += 1
+    return result
+
+def plot(d):
     plt.imshow(d, cmap='hot', interpolation='nearest')
     plt.colorbar()
     plt.clim(25,40)
     plt.pause(0.05) # plt pause allows the plotter time to catch up with the data
 
     plt.clf() 
-    return d
 
 def run_arduino(mode: int, counter: int): # 0: plot mode, 1: csv mode
     curr_time = time.time()
@@ -38,6 +66,7 @@ def run_arduino(mode: int, counter: int): # 0: plot mode, 1: csv mode
     ser.flushInput()
 
     # ignore initialization statements
+    ser.readline()
     ser.readline()
     ser.readline()
     ser.readline()
@@ -51,8 +80,12 @@ def run_arduino(mode: int, counter: int): # 0: plot mode, 1: csv mode
             data_frame = np.reshape(np.array(values).astype(float), (24,32))
 
             if mode == 0:
-                #print(data_frame)
-                plot(data_frame)
+                d = np.array(data_frame)
+                d = np.reshape(d, (24, 32))
+                nan_value_indices = get_nan_value_indices(d)
+                d = interpolate_values(d, nan_value_indices)
+                # plot(d)
+                divided_grid = section_grid(d)
 
             elif mode == 1:
                 to_csv(data_frame,filename)

@@ -1,3 +1,5 @@
+#include <Ethernet.h>
+
 /*
   Output the temperature readings to all pixels to be read by a Processing visualizer
   By: Nathan Seidle
