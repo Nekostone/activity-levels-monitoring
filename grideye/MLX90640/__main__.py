@@ -2,45 +2,56 @@ import serial
 import time
 import csv
 import numpy as np
+from nptyping import Array
 from csv_utils import to_csv
-import matplotlib.pyplot as plt
+from visualizer import init_heatmap, update_heatmap
 
-# Serial parameters
-serial_port = 'COM4'
-baud_rate = 115200
-start_byte = b'\r\n'
+"""
+Initialization
+Serial Parameters - Port, Baud Rate, Start Byte
+Program Mode - Plot (Debug) / Write Mode
+"""
 
-# Max sample count to take. Ensures the loop will cut off after some amount of time. 
-# Larger number of samples means it executes for a longer amount of time
-num = 200
+# SERIAL_PORT = 'COM5' # for windows
+SERIAL_PORT = "/dev/ttyS5" # for linux
+BAUD_RATE = 115200
+ARRAY_SHAPE = (24,32)
 
-# Mode
-# 0: real time plot mode
-# 1: Saved data mode. File is saved to current working directory. File is saved as yyyymmdd_hhmmss.csv
-mode = 0
+PLOT_MODE = 0
+WRITE_MODE = 1
+curr_time = time.time()
+filename = time.strftime("%Y%m%d_%H%M%S",time.localtime(curr_time)) + "_grideye.csv"
 
-
-def get_nan_value_indices(array):
+def get_nan_value_indices(df: Array[int, 24, 32]):
   """
-  returns indices of nan values in an array of [row, column]
+  :return: an array of indices of the nan values in the input data frame
   """
-  return np.argwhere(np.isnan(array))
+  return np.argwhere(np.isnan(df))
 
-def interpolate_values(array, nan_value_indices):
+def interpolate_values(df: Array[int, 24, 32], nan_value_indices: Array[int]):
     """
-    :param 24x32 array:
-    :param result obtained from get_nan_value_indices(data_frame):
+    :param: 23x32 data frame obtained from get_nan_value_indices(df)
     :return: 24x32 array
     """
     for indx in nan_value_indices:
         x = indx[0]
         y = indx[1]
-        array[x][y] = (array[x][y+1] + array[x+1][y] + array[x-1][y] + array[x][y-1]) / 4
-    return array
+        df[x][y] = (df[x][y+1] + df[x+1][y] + df[x-1][y] + df[x][y-1]) / 4
+    return df
 
-def section_grid(array):
+def threshold_df(df: Array[int, 24, 32], min_value: float, max_value: float):
     """
-    :param array: 24x32 array
+    :param 24x32 data frame
+    :return: a thresholded dataframe
+    """
+    df[df > max_value] = max_value
+    df[df < min_value] = min_value
+    return df
+
+
+def divide_grid_into_areas(array: Array[int, 24, 32]):
+    """
+    Divides a 24x32 array into 8x12x8 array
     :return: 8x12x8 array
     """
     result = np.zeros((8, 12, 8))
@@ -51,45 +62,42 @@ def section_grid(array):
             block_number += 1
     return result
 
-def plot(d):
-    plt.imshow(d, cmap='hot', interpolation='nearest')
-    plt.colorbar()
-    plt.clim(25,40)
-    plt.pause(0.05) # plt pause allows the plotter time to catch up with the data
+def run_arduino(forever: bool, num_samples=3000, mode=PLOT_MODE):
+    ser = serial.Serial(SERIAL_PORT, BAUD_RATE)
+    ser.reset_output_buffer()
+    counter = 0
 
-    plt.clf() 
-
-def run_arduino(mode: int, counter: int): # 0: plot mode, 1: csv mode
-    curr_time = time.time()
-    filename = time.strftime("%Y%m%d_%H%M%S",time.localtime(curr_time)) + "_grideye.csv"
-    ser = serial.Serial(serial_port, baud_rate)
-    ser.flushInput()
-
-    # ignore initialization statements
-    ser.readline()
-    ser.readline()
-    ser.readline()
-    ser.readline()
-    ser.readline()
-
-    while counter < num:
+    to_read = forever or counter < num_samples
+    plot = None
+    if mode == PLOT_MODE:
+        min_temp = 28
+        max_temp = 40
+        plot = init_heatmap("MLX90640 Heatmap", ARRAY_SHAPE, min_temp, max_temp)
+        
+    while to_read:
         try:
             ser_bytes = ser.readline()
-            decoded_string = ser_bytes.decode("utf-8").strip("\r\n")
+            decoded_string = ser_bytes.decode("utf-8", errors='ignore').strip("\r\n")
             values = decoded_string.split(",")[:-1]
-            data_frame = np.reshape(np.array(values).astype(float), (24,32))
+            array = np.array(values)
+            if array.shape[0] == ARRAY_SHAPE[0] * ARRAY_SHAPE[1]:
+                df = np.reshape(array.astype(float), ARRAY_SHAPE)
+                nan_value_indices = get_nan_value_indices(df)
+                df = interpolate_values(df, nan_value_indices)
+                max_temp = np.amax(df)
+                min_temp = np.amin(df)
+                print(f"max_value: {max_temp}, min_value: {min_temp}")
+                df = threshold_df(df, min_temp, max_temp)
 
-            if mode == 0:
-                d = np.array(data_frame)
-                d = np.reshape(d, (24, 32))
-                nan_value_indices = get_nan_value_indices(d)
-                d = interpolate_values(d, nan_value_indices)
-                # plot(d)
-                divided_grid = section_grid(d)
+                if mode == PLOT_MODE:
+                    print("Number of times replotted: ", counter)
+                    update_heatmap(df, plot)
+                    # divided_grid = divide_grid_into_areas(d)
 
-            elif mode == 1:
-                to_csv(data_frame,filename)
-
+                elif mode == WRITE_MODE:
+                    print("Writing to csv...")
+                    to_csv(df,filename)
+                
             counter += 1
 
         except KeyboardInterrupt:
@@ -99,5 +107,5 @@ def run_arduino(mode: int, counter: int): # 0: plot mode, 1: csv mode
             break
 
 if __name__ == "__main__":
-    run_arduino(mode, counter=0)
+    run_arduino(forever=True)
 

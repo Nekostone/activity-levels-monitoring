@@ -3,7 +3,7 @@ import numpy as np
 import time
 from nptyping import Array
 
-def to_csv(data: Array[float,8,8], filePath: str):
+def to_csv(data: Array[float,24,32], filePath: str):
   curr_time = time.time()
   data.insert(0, curr_time)
   with open(filePath, "a", newline = '') as f:
