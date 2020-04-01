@@ -60,3 +60,6 @@ catstone.egg-info
 .pytest_cache
 
 grideye/MLX90640/SPARKFUN CODE/
+
+# Numpy 
+*_grideye.npy

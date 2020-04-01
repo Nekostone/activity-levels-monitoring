@@ -3,7 +3,7 @@ import time
 import csv
 import numpy as np
 from nptyping import Array
-from csv_utils import to_csv
+from file_utils import save_as_npy, load_npy
 from visualizer import init_heatmap, update_heatmap
 
 """
@@ -17,10 +17,11 @@ SERIAL_PORT = "/dev/ttyS5" # for linux
 BAUD_RATE = 115200
 ARRAY_SHAPE = (24,32)
 
-PLOT_MODE = 0
+DEBUG_MODE = 0
 WRITE_MODE = 1
-curr_time = time.time()
-filename = time.strftime("%Y%m%d_%H%M%S",time.localtime(curr_time)) + "_grideye.csv"
+# curr_time = time.time()
+# filename = time.strftime("%Y%m%d_%H%M%S",time.localtime(curr_time)) + "_grideye.csv"
+filename = "test.csv"
 
 def get_nan_value_indices(df: Array[int, 24, 32]):
   """
@@ -62,14 +63,14 @@ def divide_grid_into_areas(array: Array[int, 24, 32]):
             block_number += 1
     return result
 
-def run_arduino(forever: bool, num_samples=3000, mode=PLOT_MODE):
+def run_arduino(forever: bool, num_samples=3000, mode=DEBUG_MODE):
     ser = serial.Serial(SERIAL_PORT, BAUD_RATE)
     ser.reset_output_buffer()
     counter = 0
 
     to_read = forever or counter < num_samples
     plot = None
-    if mode == PLOT_MODE:
+    if mode == DEBUG_MODE:
         min_temp = 28
         max_temp = 40
         plot = init_heatmap("MLX90640 Heatmap", ARRAY_SHAPE, min_temp, max_temp)
@@ -79,7 +80,8 @@ def run_arduino(forever: bool, num_samples=3000, mode=PLOT_MODE):
             ser_bytes = ser.readline()
             decoded_string = ser_bytes.decode("utf-8", errors='ignore').strip("\r\n")
             values = decoded_string.split(",")[:-1]
-            array = np.array(values)
+            array = np.array(values)    
+            print(array.shape)
             if array.shape[0] == ARRAY_SHAPE[0] * ARRAY_SHAPE[1]:
                 df = np.reshape(array.astype(float), ARRAY_SHAPE)
                 nan_value_indices = get_nan_value_indices(df)
@@ -89,14 +91,15 @@ def run_arduino(forever: bool, num_samples=3000, mode=PLOT_MODE):
                 print(f"max_value: {max_temp}, min_value: {min_temp}")
                 df = threshold_df(df, min_temp, max_temp)
 
-                if mode == PLOT_MODE:
+                if mode == DEBUG_MODE:
                     print("Number of times replotted: ", counter)
                     update_heatmap(df, plot)
-                    # divided_grid = divide_grid_into_areas(d)
+                    divided_grid = divide_grid_into_areas(df)
+                    print("Saving npy object...")
+                    save_as_npy(divided_grid)
 
                 elif mode == WRITE_MODE:
-                    print("Writing to csv...")
-                    to_csv(df,filename)
+                    save_as_npy(divided_grid)
                 
             counter += 1
 
