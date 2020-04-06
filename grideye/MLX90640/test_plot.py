@@ -1,6 +1,5 @@
 import numpy as np
-
-from visualizer import init_heatmap, update_heatmap, draw_section_borders_8
+from visualizer import init_heatmap, update_heatmap
 
 """
 Test Visualizer
