@@ -1,7 +1,6 @@
 import csv
 import numpy as np
 import time
-from nptyping import Array
 
 def save_as_npy(df):
   folder_path = "data/"
