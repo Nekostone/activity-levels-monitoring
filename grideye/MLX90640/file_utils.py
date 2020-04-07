@@ -1,6 +1,8 @@
 import csv
 import numpy as np
 import time
+from os import listdir
+from os.path import isfile, join
 
 def save_as_npy(df):
   folder_path = "data/"
@@ -9,5 +11,7 @@ def save_as_npy(df):
   print("Saved in ", filename, ".npy")
   
 def load_npy(filename):
-  arr = np.load(filename)
-  return arr 
+  return np.load(filename)
+
+def get_all_data_filenames(dataPath):
+    return [f for f in listdir(dataPath) if isfile(join(dataPath, f))]
