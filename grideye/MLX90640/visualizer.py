@@ -1,4 +1,3 @@
-from nptyping import Array
 import os
 import matplotlib as mpl
 if os.environ.get('DISPLAY','') == '':
@@ -9,7 +8,7 @@ import matplotlib.patches as patches
 import numpy as np
 import time
 
-def init_heatmap(title: str, frame_shape: tuple, min_value: int, max_value):
+def init_heatmap(title, frame_shape, min_value, max_value):
   """
   Initialize the heatmap figure plot.
   Returns a plot tuple (fig, ax, im).

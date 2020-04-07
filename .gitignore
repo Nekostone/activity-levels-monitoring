@@ -58,7 +58,7 @@ __pycache__
 catstone.egg-info
 .vscode
 .pytest_cache
-
+*.pyc
 grideye/MLX90640/SPARKFUN CODE/
 
 # Numpy 
