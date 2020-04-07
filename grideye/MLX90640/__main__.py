@@ -46,19 +46,6 @@ def threshold_df(df, min_value, max_value):
     return df
 
 
-def divide_grid_into_areas(array):
-    """
-    Divides a 24x32 array into 8x12x8 array
-    :return: 8x12x8 array
-    """
-    result = np.zeros((8, 12, 8))
-    block_number = 0
-    for i in range(2):
-        for j in range(4):
-            result[block_number] = array[i * 12:(i + 1) * 12, j * 8:(j + 1) * 8]
-            block_number += 1
-    return result
-
 def run_arduino(forever, num_samples=3000, mode=DEBUG_MODE):
     ser = serial.Serial(SERIAL_PORT, BAUD_RATE)
     ser.reset_output_buffer()
