@@ -18,6 +18,7 @@ ARRAY_SHAPE = (24,32)
 
 DEBUG_MODE = 1
 WRITE_MODE = 0
+data_path = None # change as it fits 
 
 def get_nan_value_indices(df):
   """
@@ -64,7 +65,6 @@ def run_arduino(forever, num_samples=3000, mode=DEBUG_MODE):
             decoded_string = ser_bytes.decode("utf-8", errors='ignore').strip("\r\n")
             values = decoded_string.split(",")[:-1]
             array = np.array(values)    
-            print(array.shape)
             if array.shape[0] == ARRAY_SHAPE[0] * ARRAY_SHAPE[1]:
                 df = np.reshape(array.astype(float), ARRAY_SHAPE)
                 nan_value_indices = get_nan_value_indices(df)
@@ -74,13 +74,12 @@ def run_arduino(forever, num_samples=3000, mode=DEBUG_MODE):
                 df = threshold_df(df, min_temp, max_temp)
 
                 if mode == DEBUG_MODE:
-                    print("Number of times replotted: ", counter)
+                    print("Updating Heatmap...", "[{}]".format(counter))
                     update_heatmap(df, plot)
-                    print("Saving npy object...")
-                    save_as_npy(df)
 
                 elif mode == WRITE_MODE:
-                    save_as_npy(df)
+                    print("Saving npy object...", "[{}]".format(counter))
+                    save_as_npy(df, data_path)
                 
             counter += 1
 
@@ -91,5 +90,5 @@ def run_arduino(forever, num_samples=3000, mode=DEBUG_MODE):
             break
 
 if __name__ == "__main__":
-    run_arduino(forever=True)
+    run_arduino(forever=True, mode=WRITE_MODE) 
 

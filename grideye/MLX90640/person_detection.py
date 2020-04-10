@@ -7,11 +7,7 @@ import time
 from visualizer import init_heatmap, update_heatmap
 import matplotlib.pyplot as plt
 
-data_path = "./data/teck_first_trial"
-files = get_all_data_filenames(data_path)
-print("Number of frames found in ", data_path, ": ", len(files))
-
-def get_frame(filename):
+def get_frame(filename, data_path):
     return load_npy(join(data_path, filename))
 
 # for plotting the heatmap of original data
@@ -20,8 +16,13 @@ def get_init_heatmap_plot():
     array_shape = (24,32)
     min_value = 25
     max_value = 40
-    plot = init_heatmap("Grideye Heatmap", array_shape, min_value, max_value)
-    return plot
+    return init_heatmap("Grideye Heatmap", array_shape, min_value, max_value)
+
+def get_init_likelihood_plot():
+    array_shape = (2,4)
+    min_value = 0
+    max_value = 1
+    return init_heatmap("Likelihood Plot", array_shape, min_value, max_value)
 
 """
 Naive Algorithm or determining which area the person is at inside a single room
@@ -36,7 +37,6 @@ def divide_grid_into_areas(array):
     Divides a 24x32 array into 8x12x8 array
     :return: 8x12x8 array
     """
-    print(array)
     result = np.zeros((8, 12, 8))
     block_number = 0
     for i in range(2):
@@ -65,6 +65,21 @@ def naive_detection_by_frame(frame):
 
     return areas_person_is_in
 
+def naive_detection_from_data(data_path):
+    heatmap_plot = get_init_heatmap_plot()
+    likelihood_plot = get_init_likelihood_plot()
+    files = get_all_data_filenames(data_path)
+    num_files = len(files)
+    for i in range(num_files):
+        frame = get_frame(files[i], data_path)
+        areas_person_is_in = naive_detection_by_frame(frame)
+        likelihood_array = [[areas_person_is_in[i]["likelihood"] for i in range(4)], [areas_person_is_in[i]["likelihood"] for i in range(4,8)]]
+        
+        # if debugging with plot view
+        update_heatmap(frame, heatmap_plot)
+        update_heatmap(likelihood_array, likelihood_plot)
+
+
 def visualize_likelihood_plot(areas_person_is_in):
     to_plot = [[areas_person_is_in[i]["likelihood"] for i in range(4)], [areas_person_is_in[i]["likelihood"] for i in range(4,8)]]
     fig, ax = plt.subplots()
@@ -81,14 +96,6 @@ def visualize_likelihood_plot(areas_person_is_in):
     fig.tight_layout()
     plt.show()
     plt.colorbar()
-
-# testing of naive detection algorithm
-# view normal heatmap next to percentage plot
-test_frame = get_frame(files[5])
-areas_person_is_in = naive_detection_by_frame(test_frame)
-fig, ax = plt.subplots()
-im = ax.imshow(test_frame, cmap="hot")
-visualize_likelihood_plot(areas_person_is_in)
 
 """
 Optical Flow Algorithm
@@ -129,7 +136,6 @@ def run_optical_flow(files):
         prev = next
         k = cv2.waitKey(30) & 0xff
         time.sleep(1)
-        print(counter)
         
         counter += 1
 
