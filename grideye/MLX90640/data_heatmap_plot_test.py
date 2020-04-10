@@ -10,7 +10,7 @@ min_value = 26
 max_value = 40
 plot = init_heatmap("Grideye Heatmap", array_shape, min_value, max_value)
 
-files_path = "./data/teck_first_trial"
+files_path = "./data/teck_sit_one_hr"
 files = [f for f in listdir(files_path) if isfile(join(files_path, f))]
 
 print("Number of frames found in ", files_path, ": ", len(files))

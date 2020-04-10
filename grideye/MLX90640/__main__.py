@@ -46,6 +46,11 @@ def threshold_df(df, min_value, max_value):
     df[df < min_value] = min_value
     return df
 
+# TODO: Automate the cycle of: 
+# - collection of 30mins worth of data frame
+# - time series analysis
+# - free memory by deleting the 30mins of data after analysis is completed
+# - send data to cloud
 
 def run_arduino(forever, num_samples=3000, mode=DEBUG_MODE):
     ser = serial.Serial(SERIAL_PORT, BAUD_RATE)
