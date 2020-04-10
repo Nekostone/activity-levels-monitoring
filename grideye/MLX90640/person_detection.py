@@ -1,14 +1,11 @@
 import cv2
 import numpy as np
-from file_utils import load_npy, get_all_data_filenames
+from file_utils import get_frame, get_all_data_filenames
 import os
 from os.path import isfile, join
 import time
 from visualizer import init_heatmap, update_heatmap
 import matplotlib.pyplot as plt
-
-def get_frame(filename, data_path):
-    return load_npy(join(data_path, filename))
 
 # for plotting the heatmap of original data
 
@@ -45,7 +42,54 @@ def divide_grid_into_areas(array):
             block_number += 1
     return result
 
+def naive_binary_likelihood_by_frame(frame):
+    """
+    :param: 24x32 frame
+    :return: { int: bool, ... int: bool }
+    """
+    divided_grid = divide_grid_into_areas(frame)
+    areas_person_is_in = {}
+    max_temp = 40
+    if np.amax(frame) < max_temp:
+        max_temp = np.amax(frame)
+    for i in range(8):
+        area = divided_grid[i]
+        filtered_area = area[np.logical_and(area >= (max_temp - 2), (area <= max_temp))]
+        num_hot_pixels = filtered_area.size
+        areas_person_is_in[i] =  num_hot_pixels/area.size
+
+    total_percentage_hot_pixels = sum(areas_person_is_in.values())
+    max_likelihood = 0
+
+    if total_percentage_hot_pixels == 0:
+        for x in areas_person_is_in:
+            areas_person_is_in[x] = 0
+            
+        return {i : 0 for i in range(8)}
+
+    else:
+        for x in areas_person_is_in:
+            likelihood = areas_person_is_in[x]/total_percentage_hot_pixels
+            areas_person_is_in[x] = likelihood
+            if likelihood > max_likelihood: 
+                max_likelihood = likelihood
+
+        return {i : (1 if areas_person_is_in[i] == max_likelihood else 0) for i in range(8) }
+    
+
 def naive_detection_by_frame(frame):
+    """
+    :param: a single 24x32 frame
+    :return: areas_person_is_in - a dictionary of the structure
+        {
+            0: {
+                "in_area": True, # criteria based on >0.6 of area is hot
+                "likelihood": 0.83
+            },
+            ...,
+            8: {...}
+        }  
+    """
     divided_grid = divide_grid_into_areas(frame)
     areas_person_is_in = {}
     max_temp = 40
@@ -57,11 +101,15 @@ def naive_detection_by_frame(frame):
         num_hot_pixels = filtered_area.size
         person_is_in_area = num_hot_pixels > 0.6*(area.size)
         areas_person_is_in[i] = {"in_area": person_is_in_area, "likelihood": num_hot_pixels/area.size}
-    
     total_percentage_hot_pixels = sum([areas_person_is_in[x]["likelihood"] for x in areas_person_is_in])
-   
-    for x in areas_person_is_in:
-        areas_person_is_in[x]["likelihood"] = areas_person_is_in[x]["likelihood"]/total_percentage_hot_pixels
+    
+    if total_percentage_hot_pixels == 0:
+        for x in areas_person_is_in:
+            areas_person_is_in[x]["likelihood"] = 0
+
+    else:
+        for x in areas_person_is_in:
+            areas_person_is_in[x]["likelihood"] = areas_person_is_in[x]["likelihood"]/total_percentage_hot_pixels
 
     return areas_person_is_in
 
