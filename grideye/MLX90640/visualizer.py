@@ -56,36 +56,37 @@ def time_series_plot_from_json(time_series_dict, single_day=False, save=False):
   }
   """
   fig, ax = plt.subplots()
-  unformatted_intervals = sorted(list(time_series_dict.keys()))
-  intervals = [datetime.strptime(t, "%Y%m%d_%H%M%S") for t in unformatted_intervals]
-  start_time = intervals[0]
+  sorted_intervals = sorted(list(time_series_dict.keys()))
+  formatted_intervals = [datetime.strptime(t, "%Y%m%d_%H%M%S") for t in sorted_intervals]
+  start_time = formatted_intervals[0]
   formatted_start_time = datetime_to_string(start_time)
   if single_day:
+    xticks = range(len(formatted_intervals)) # show ticks only for every half hour period
+    xtick_labels = [str(t.hour) +":"+ str(t.minute) for t in formatted_intervals ]
     title = formatted_start_time
-    xtick_labels = [str(t.hour) +":"+ str(t.minute) for t in intervals ]
-    xticks = range(xtick_labels)
 
   else:
-    end_time = intervals[-1]
+    end_time = formatted_intervals[-1]
     formatted_end_time = datetime_to_string(end_time)
-    title = formatted_start_time + " to " + formatted_end_time
-    temp_labels = [str(t.hour) +":"+ str(t.minute) for t in intervals ]
-    num_intervals = len(temp_labels)
-    xticks = range(0,num_intervals,2)
+    temp_labels = [str(t.hour) +":"+ str(t.minute) for t in formatted_intervals ]
+    num_intervals = len(formatted_intervals)
+    xticks = range(0,num_intervals,2) # show ticks only for every hour period
     xtick_labels = [temp_labels[i] for i in range(num_intervals) if i % 2 != 0]
+    title = formatted_start_time + " to " + formatted_end_time
 
   ax.set_title(title)
   ax.set_xlabel("Time")
   ax.set_xticks(xticks)
-  ax.set_xticklabels(xtick_labels) 
+  ax.set_xticklabels(xtick_labels)
   plt.setp(ax.get_xticklabels(), rotation=45, horizontalalignment='right')
   ax.set_ylabel("Percentage of time spent in 30min interval")
-  ytick_labels = sorted(list(time_series_dict[unformatted_intervals[0]].keys()))
+  ytick_labels = sorted(list(time_series_dict[sorted_intervals[0]].keys()))
 
   for label in ytick_labels:
-    print(label)
-    y_values = [time_series_dict[x][label] for x in unformatted_intervals]
-    print(y_values)
+    y_values = []
+    for interval in sorted_intervals:
+      time_series_dict[interval][label]
+      y_values.append(time_series_dict[interval][label])
     ax.plot(y_values, marker='o', label=label)
  
   ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)

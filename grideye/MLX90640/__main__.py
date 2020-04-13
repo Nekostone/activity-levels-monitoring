@@ -18,7 +18,7 @@ ARRAY_SHAPE = (24,32)
 
 DEBUG_MODE = 1
 WRITE_MODE = 0
-data_path = "data/teck_one_day_activity" # change as it fits 
+DATA_PATH = "data/teck_one_day_activity" # change as it fits 
 
 def interpolate_values(df):
     """
@@ -104,7 +104,7 @@ def run_arduino(forever, num_samples=3000, mode=DEBUG_MODE):
 
                 elif mode == WRITE_MODE:
                     print("Saving npy object...", "[{}]".format(counter))
-                    save_as_npy(df, data_path)
+                    save_as_npy(df, DATA_PATH)
                 
             counter += 1
 
