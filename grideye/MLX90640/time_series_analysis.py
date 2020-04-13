@@ -4,7 +4,7 @@ from person_detection import naive_binary_likelihood_by_frame
 import time
 
 
-data_path = "./data/teck_one_day_trial"
+data_path = "./data/teck_three_hours"
 files = get_all_data_filenames(data_path)
 print("Number of frames: ", len(files))
 
@@ -32,6 +32,7 @@ def analyze():
             num_frames = total_frames - counter
         
         start_time = files[counter].split("_grideye")[0]
+        print("Analyzing 30min interval from", start_time,)
         one_span_frames = files[counter: counter+num_frames]
         one_span_analysis = analyze_by_period(one_span_frames, num_frames)
         analysis_results[start_time] = one_span_analysis
@@ -43,4 +44,4 @@ start = time.time()
 result = analyze()
 end = time.time()
 print("Analysis completed in ", end-start, "seconds")
-write_to_json(result, "./analysis_result.json")
+write_to_json(result, "./analysis_result1.json")

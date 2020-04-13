@@ -43,7 +43,10 @@ def draw_section_borders_8(ax):
           lower_left_coords = (12*(i + 1)-1, 8*(j+1)-1)
           rect = patches.Rectangle(lower_left_coords, width=2, height=1, linewidth=1, edgecolor='b', facecolor='none')
 
-def time_series_plot(time_series_dict):
+def datetime_to_string(datetime):
+  return "/".join([str(datetime.day), str(datetime.month), str(datetime.year)])
+
+def time_series_plot_from_json(time_series_dict, single_day=False, save=False):
   """
   Given a dictionary of the following format, plot the trend in likelihood
   {
@@ -56,25 +59,38 @@ def time_series_plot(time_series_dict):
   unformatted_intervals = sorted(list(time_series_dict.keys()))
   intervals = [datetime.strptime(t, "%Y%m%d_%H%M%S") for t in unformatted_intervals]
   start_time = intervals[0]
-  title = "/".join([str(start_time.day), str(start_time.month), str(start_time.year)])
+  formatted_start_time = datetime_to_string(start_time)
+  if single_day:
+    title = formatted_start_time
+    xtick_labels = [str(t.hour) +":"+ str(t.minute) for t in intervals ]
+    xticks = range(xtick_labels)
+
+  else:
+    end_time = intervals[-1]
+    formatted_end_time = datetime_to_string(end_time)
+    title = formatted_start_time + " to " + formatted_end_time
+    temp_labels = [str(t.hour) +":"+ str(t.minute) for t in intervals ]
+    num_intervals = len(temp_labels)
+    xticks = range(0,num_intervals,2)
+    xtick_labels = [temp_labels[i] for i in range(num_intervals) if i % 2 != 0]
+
   ax.set_title(title)
-
   ax.set_xlabel("Time")
-  xtick_labels = [str(t.hour) +":"+ str(t.minute) for t in intervals ]
-  ax.set_xticklabels(xtick_labels)
-  
+  ax.set_xticks(xticks)
+  ax.set_xticklabels(xtick_labels) 
+  plt.setp(ax.get_xticklabels(), rotation=45, horizontalalignment='right')
   ax.set_ylabel("Percentage of time spent in 30min interval")
-  ytick_labels = list(time_series_dict[unformatted_intervals[0]].keys())
+  ytick_labels = sorted(list(time_series_dict[unformatted_intervals[0]].keys()))
 
-  for i in range(len(ytick_labels)):
-    y_values = [time_series_dict[x][str(i)] for x in unformatted_intervals]
-    ax.plot(y_values, marker='o', label=ytick_labels[i])
-    ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
-
+  for label in ytick_labels:
+    print(label)
+    y_values = [time_series_dict[x][label] for x in unformatted_intervals]
+    print(y_values)
+    ax.plot(y_values, marker='o', label=label)
+ 
+  ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
   fig.tight_layout()
+  if save:
+    plt.savefig("./time_series_plt.png")
   plt.show()
-
-def saveplot(save=False, save_path=""):
-  if save and save_path: 
-   plt.savefig(save_path)
 

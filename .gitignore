@@ -62,4 +62,5 @@ catstone.egg-info
 grideye/MLX90640/SPARKFUN CODE/
 
 # Numpy 
-*_grideye.npy
+*.npy
+*.zip
