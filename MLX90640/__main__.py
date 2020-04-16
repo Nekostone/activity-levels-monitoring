@@ -12,13 +12,13 @@ Program Mode - Plot (Debug) / Write Mode
 """
 
 # SERIAL_PORT = 'COM5' # for windows
-SERIAL_PORT = "/dev/ttyUSB0" # for linux
+SERIAL_PORT = "/dev/ttyS3" # for linux
 BAUD_RATE = 115200
 ARRAY_SHAPE = (24,32)
 
 DEBUG_MODE = 1
 WRITE_MODE = 0
-DATA_PATH = "data/teck_one_day_activity" # change as it fits 
+DATA_PATH = "data/sw_second_trial_night" # change as it fits 
 
 def interpolate_values(df):
     """
@@ -115,5 +115,5 @@ def run_arduino(forever, num_samples=3000, mode=DEBUG_MODE):
             break
 
 if __name__ == "__main__":
-    run_arduino(forever=True, mode=WRITE_MODE) 
+    run_arduino(forever=True, mode=DEBUG_MODE) 
 

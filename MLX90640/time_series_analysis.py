@@ -36,7 +36,7 @@ def analyze():
 
 start = time.time()
 
-folder_name = "teck_one_day_activity"
+folder_name = "sw_first_trial"
 data_path = "./data/" + folder_name
 files = get_all_data_filenames(data_path)
 print("Number of frames: ", len(files))

@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from presence_detection import get_frame, naive_detection_by_frame, naive_detection_from_data, visualize_likelihood_plot
 from presence_detection import naive_binary_likelihood_by_frame
 
-data_path = "./data/teck_one_day_activity"
+data_path = "./data/sw_second_trial"
 files = get_all_data_filenames(data_path)
 print("Number of frames found in ", data_path, ": ", len(files))
 
@@ -29,3 +29,5 @@ def test_naive_binary_likelihood():
     test_frame = get_frame(files[60*20], data_path)
     result = naive_binary_likelihood_by_frame(test_frame)
     print(result)
+    
+test_naive_all_frames()

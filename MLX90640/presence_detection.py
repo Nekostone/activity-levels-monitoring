@@ -113,7 +113,7 @@ def naive_detection_by_frame(frame):
 
     return areas_person_is_in
 
-def naive_detection_from_data(data_path, startIndex, endIndex):
+def naive_detection_from_data(data_path, startIndex=None, endIndex=None):
     heatmap_plot = get_init_heatmap_plot()
     likelihood_plot = get_init_likelihood_plot()
     files = get_all_data_filenames(data_path)
