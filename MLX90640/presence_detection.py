@@ -113,12 +113,16 @@ def naive_detection_by_frame(frame):
 
     return areas_person_is_in
 
-def naive_detection_from_data(data_path):
+def naive_detection_from_data(data_path, startIndex=None, endIndex=None):
     heatmap_plot = get_init_heatmap_plot()
     likelihood_plot = get_init_likelihood_plot()
     files = get_all_data_filenames(data_path)
-    num_files = len(files)
-    for i in range(num_files):
+    if startIndex == None:
+        startIndex = 0
+    if endIndex == None:
+        endIndex = len(files)
+    print(startIndex, endIndex)
+    for i in range(startIndex, endIndex):
         frame = get_frame(files[i], data_path)
         areas_person_is_in = naive_detection_by_frame(frame)
         likelihood_array = [[areas_person_is_in[i]["likelihood"] for i in range(4)], [areas_person_is_in[i]["likelihood"] for i in range(4,8)]]

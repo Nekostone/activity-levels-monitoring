@@ -1,6 +1,6 @@
 import serial
 import time
-import csv
+import cv2
 import numpy as np
 from file_utils import save_as_npy, load_npy
 from visualizer import init_heatmap, update_heatmap
@@ -12,29 +12,50 @@ Program Mode - Plot (Debug) / Write Mode
 """
 
 # SERIAL_PORT = 'COM5' # for windows
-SERIAL_PORT = "/dev/ttyUSB0" # for linux
+SERIAL_PORT = "/dev/ttyS3" # for linux
 BAUD_RATE = 115200
 ARRAY_SHAPE = (24,32)
 
 DEBUG_MODE = 1
 WRITE_MODE = 0
-data_path = None # change as it fits 
+DATA_PATH = "data/sw_second_trial_night" # change as it fits 
 
-def get_nan_value_indices(df):
-  """
-  :return: an array of indices of the nan values in the input data frame
-  """
-  return np.argwhere(np.isnan(df))
-
-def interpolate_values(df, nan_value_indices):
+def interpolate_values(df):
     """
-    :param: 23x32 data frame obtained from get_nan_value_indices(df)
+    :param: 24x32 data frame obtained from get_nan_value_indices(df)
     :return: 24x32 array
     """
+    nan_value_indices = np.argwhere(np.isnan(df))
+    x_max = df.shape[0] - 1
+    y_max = df.shape[1] - 1
     for indx in nan_value_indices:
         x = indx[0]
         y = indx[1]
-        df[x][y] = (df[x][y+1] + df[x+1][y] + df[x-1][y] + df[x][y-1]) / 4
+        if x==0  and y==0 :
+            df[x][y] = (df[x+1][y]+df[x][y+1])/2 
+
+        elif (x==x_max and y==y_max):
+            df[x][y] = (df[x-1][y]+df[x][y-1])/2
+
+        elif (x==0 and y==y_max):
+            df[x][y] = (df[x+1][y]+df[x][y-1])/2
+
+        elif (x==x_max and y==0):
+            df[x][y] = (df[x-1][y]+df[x][y+1])/2
+
+        elif (x==0):
+            df[x][y] = (df[x+1][y]+df[x][y-1]+df[x][y+1])/3
+
+        elif (x==x_max):
+            df[x][y] = (df[x-1][y]+df[x][y-1]+df[x][y+1])/3
+
+        elif (y==0):
+            df[x][y] = (df[x+1][y]+df[x-1][y]+df[x][y+1])/3
+
+        elif (y==y_max):
+            df[x][y] = (df[x-1][y]+df[x+1][y]+df[x][y-1])/3
+        else :
+            df[x][y] = (df[x][y+1] + df[x+1][y] + df[x-1][y] + df[x][y-1]) / 4
     return df
 
 def threshold_df(df, min_value, max_value):
@@ -72,11 +93,10 @@ def run_arduino(forever, num_samples=3000, mode=DEBUG_MODE):
             array = np.array(values)    
             if array.shape[0] == ARRAY_SHAPE[0] * ARRAY_SHAPE[1]:
                 df = np.reshape(array.astype(float), ARRAY_SHAPE)
-                nan_value_indices = get_nan_value_indices(df)
-                df = interpolate_values(df, nan_value_indices)
+                # nan_value_indices = get_nan_value_indices(df)
+                df = interpolate_values(df)
                 max_temp = np.amax(df)
                 min_temp = np.amin(df)
-                df = threshold_df(df, min_temp, max_temp)
 
                 if mode == DEBUG_MODE:
                     print("Updating Heatmap...", "[{}]".format(counter))
@@ -84,7 +104,7 @@ def run_arduino(forever, num_samples=3000, mode=DEBUG_MODE):
 
                 elif mode == WRITE_MODE:
                     print("Saving npy object...", "[{}]".format(counter))
-                    save_as_npy(df, data_path)
+                    save_as_npy(df, DATA_PATH)
                 
             counter += 1
 
@@ -95,5 +115,5 @@ def run_arduino(forever, num_samples=3000, mode=DEBUG_MODE):
             break
 
 if __name__ == "__main__":
-    run_arduino(forever=True, mode=WRITE_MODE) 
+    run_arduino(forever=True, mode=DEBUG_MODE) 
 

@@ -1,12 +1,7 @@
 from collections import defaultdict
 from file_utils import get_all_data_filenames, get_frame, write_to_json
-from person_detection import naive_binary_likelihood_by_frame
+from presence_detection import naive_binary_likelihood_by_frame
 import time
-
-
-data_path = "./data/teck_one_day_trial"
-files = get_all_data_filenames(data_path)
-print("Number of frames: ", len(files))
 
 def analyze_by_period(files, num_frames=60*30):
     time_person_spent_in_areas = defaultdict(int)
@@ -32,15 +27,21 @@ def analyze():
             num_frames = total_frames - counter
         
         start_time = files[counter].split("_grideye")[0]
+        print("Analyzing 30min interval from", start_time,)
         one_span_frames = files[counter: counter+num_frames]
         one_span_analysis = analyze_by_period(one_span_frames, num_frames)
         analysis_results[start_time] = one_span_analysis
         counter += num_frames
-    print(analysis_results)
     return analysis_results
 
 start = time.time()
+
+folder_name = "sw_first_trial"
+data_path = "./data/" + folder_name
+files = get_all_data_filenames(data_path)
+print("Number of frames: ", len(files))
 result = analyze()
 end = time.time()
+
 print("Analysis completed in ", end-start, "seconds")
-write_to_json(result, "./analysis_result.json")
+write_to_json(result, "./sample_time_series_results/{}.json".format(folder_name))
