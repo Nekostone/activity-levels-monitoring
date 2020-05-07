@@ -1,13 +1,15 @@
 import os
+import time
+from datetime import datetime
+
 import matplotlib as mpl
+import matplotlib.patches as patches
+import matplotlib.pyplot as plt
+import numpy as np
+
 if os.environ.get('DISPLAY','') == '':
     print('no display found. Using non-interactive Agg backend')
     mpl.use('Agg')
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-import numpy as np
-import time
-from datetime import datetime
 
 def init_heatmap(title, frame_shape, min_value, max_value):
   """
@@ -94,4 +96,3 @@ def time_series_plot_from_json(time_series_dict, single_day=False, save=False):
   if save:
     plt.savefig("./time_series_plt.png")
   plt.show()
-

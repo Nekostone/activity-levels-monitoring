@@ -1,8 +1,9 @@
-import serial
 import time
-import cv2
+
 import numpy as np
-from file_utils import save_as_npy, load_npy
+import serial
+
+from file_utils import save_as_npy
 from visualizer import init_heatmap, update_heatmap
 
 """
@@ -58,22 +59,16 @@ def interpolate_values(df):
             df[x][y] = (df[x][y+1] + df[x+1][y] + df[x-1][y] + df[x][y-1]) / 4
     return df
 
-def threshold_df(df, min_value, max_value):
-    """
-    :param 24x32 data frame
-    :return: a thresholded dataframe
-    """
-    df[df > max_value] = max_value
-    df[df < min_value] = min_value
-    return df
-
-# TODO: Automate the cycle of: 
+# TODO: Using a lambda function, Automate the cycle of: 
 # - collection of 30mins worth of data frame
 # - time series analysis
 # - free memory by deleting the 30mins of data after analysis is completed
 # - send data to cloud
 
-def run_arduino(forever, num_samples=3000, mode=DEBUG_MODE):
+def save_serial_output(forever, num_samples=3000, mode=DEBUG_MODE):
+    """
+    Save serial output from arduino 
+    """
     ser = serial.Serial(SERIAL_PORT, BAUD_RATE)
     ser.reset_output_buffer()
     counter = 0
@@ -115,5 +110,4 @@ def run_arduino(forever, num_samples=3000, mode=DEBUG_MODE):
             break
 
 if __name__ == "__main__":
-    run_arduino(forever=True, mode=DEBUG_MODE) 
-
+    save_serial_output(forever=True, mode=DEBUG_MODE) 
