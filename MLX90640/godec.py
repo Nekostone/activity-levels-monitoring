@@ -29,20 +29,15 @@ def godec(X, rank=1, card=None, iterated_power=1, max_iter=100, tol=0.001):
     
     tol : float >= 0, optional
         Tolerance for stopping criteria. The default is 0.001.
-
+    ----------
+    
     Returns
     -------
     L : array-like, low-rank matrix.
-    
     S : array-like, sparse matrix.
-
     LS : array-like, reconstruction matrix.
-    
     RMSE : root-mean-square error.
-    
-    References
     ----------
-    Zhou, T. and Tao, D. "GoDec: Randomized Lo-rank & Sparse Matrix Decomposition in Noisy Case", ICML 2011.
     """
     iter = 1
     RMSE = []

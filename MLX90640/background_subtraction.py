@@ -8,10 +8,7 @@ from godec import godec
 from godec_utils import play_2d_results
 
 
-def bs_godec(data_path, debug=False):
-    files = get_all_files(data_path)
-    files = files[len(files)-20:len(files)]
-    print(len(files))
+def bs_godec(files, debug=False):
     i = 0
     for f in files:
         frame = get_frame_GREY(f)
@@ -23,21 +20,21 @@ def bs_godec(data_path, debug=False):
         else:
             M = column_stack((M, F))
         i+=1
-        
+    
+    print(M.shape)
     t = time.time()
-    L, S, LS, RMSE = godec(M, iterated_power=20)
+    L, S, LS, RMSE = godec(M, iterated_power=5)
     elapsed = time.time() - t
     print(elapsed, "sec elapsed")
-    height, width = frame.shape
     if debug:
+        height, width = frame.shape
         play_2d_results(M, LS, L, S, width, height)
-    return LS
+    return L, S
 
 
-def bs_mog2(data_path):
+def bs_mog2(files):
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
     fgbg = cv2.createBackgroundSubtractorMOG2()
-    files = get_all_files(data_path)
     for f in files:
         frame = get_frame_GREY(f)
         fgmask = fgbg.apply(frame)
@@ -49,6 +46,3 @@ def bs_mog2(data_path):
             break
 
     cv2.destroyAllWindows()
-
-data_path = "data/teck_empty_room_with_light_and_no_AC_curtains_open_10mins"
-bs_godec(data_path)

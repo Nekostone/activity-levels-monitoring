@@ -117,7 +117,7 @@ def naive_detection_by_frame(frame):
 
     return areas_person_is_in
 
-def naive_detection_from_datapath(data_path, startIndex=None, endIndex=None):
+def naive_detection_from_files(data_path, startIndex=None, endIndex=None):
     heatmap_plot = get_init_heatmap_plot()
     likelihood_plot = get_init_likelihood_plot()
     files = get_all_files(data_path)
@@ -157,7 +157,7 @@ def visualize_likelihood_plot(areas_person_is_in):
 Optical Flow Algorithm
 """
 
-def optical_flow_lk(data_path):
+def optical_flow_lk(files):
     print("Performing Lucas-Kanade Optical Flow")
     plot = get_init_heatmap_plot()
 
@@ -172,7 +172,6 @@ def optical_flow_lk(data_path):
                     criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
 
     # Take first frame and find corners in it
-    files = get_all_files(data_path)
     first_frame_gray = get_frame_GREY(files[0])
     prevPts = cv2.goodFeaturesToTrack(first_frame_gray, mask = None, **feature_params)
     color = np.random.randint(0,255,(100,3))
@@ -213,10 +212,9 @@ def optical_flow_lk(data_path):
         counter +=1
     
 
-def optical_flow_dense(data_path):
+def optical_flow_dense(files):
     print("Performing Dense Optical Flow")
     plot = get_init_heatmap_plot()
-    files = get_all_files(data_path)
     first_frame = get_frame(files[0])
     prev_rgb = get_frame_RGB(files[0])
     test = cv2.cvtColor(first_frame.astype("uint8"), cv2.COLOR_GRAY2BGR)

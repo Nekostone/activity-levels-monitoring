@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from file_utils import get_all_files
 from presence_detection import (get_frame, naive_binary_likelihood_by_frame,
                                 naive_detection_by_frame,
-                                naive_detection_from_datapath,
+                                naive_detection_from_files,
                                 optical_flow_dense, optical_flow_lk,
                                 visualize_likelihood_plot)
 
@@ -25,10 +25,10 @@ def test_naive_one_frame():
     visualize_likelihood_plot(areas_person_is_in)
 
 def test_naive_many_frames():
-    naive_detection_from_datapath(data_path, 7200, 12000)
+    naive_detection_from_files(files, 7200, 12000)
 
 def test_naive_all_frames():
-    naive_detection_from_datapath(data_path)
+    naive_detection_from_files(files)
 
 def test_naive_binary_likelihood():
     test_frame = get_frame(files[60*20])
@@ -38,9 +38,9 @@ def test_naive_binary_likelihood():
 Optical Flow Tests
 """
 def test_opticalflow_lk():
-    optical_flow_lk(data_path)
+    optical_flow_lk(files)
     
 def test_opticalflow_dense():
-    optical_flow_dense(data_path)
+    optical_flow_dense(files)
 
 test_opticalflow_lk()
