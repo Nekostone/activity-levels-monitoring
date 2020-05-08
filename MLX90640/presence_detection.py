@@ -2,7 +2,7 @@ import os
 import time
 from os.path import isfile, join
 
-import cv2
+import cv2 as cv
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -169,11 +169,11 @@ def optical_flow_lk(files):
     # Parameters for lucas kanade optical flow
     lk_params = dict( winSize  = (3,3),
                     maxLevel = 3,
-                    criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
+                    criteria = (cv.TERM_CRITERIA_EPS | cv.TERM_CRITERIA_COUNT, 10, 0.03))
 
     # Take first frame and find corners in it
     first_frame_gray = get_frame_GREY(files[0])
-    prevPts = cv2.goodFeaturesToTrack(first_frame_gray, mask = None, **feature_params)
+    prevPts = cv.goodFeaturesToTrack(first_frame_gray, mask = None, **feature_params)
     color = np.random.randint(0,255,(100,3))
     # Create a mask image for drawing purposes
     mask = np.zeros_like(first_frame_gray)
@@ -185,10 +185,10 @@ def optical_flow_lk(files):
         nextImg = frame.copy()
         update_heatmap(get_frame(files[counter]), plot)
         # grayscale but uint8??
-        nextPts, status, err = cv2.calcOpticalFlowPyrLK(prevImg, nextImg, prevPts, None, **lk_params)
+        nextPts, status, err = cv.calcOpticalFlowPyrLK(prevImg, nextImg, prevPts, None, **lk_params)
         if nextPts is None:
-            prevPts = cv2.goodFeaturesToTrack(frame, mask = None, **feature_params)
-            nextPts, status, err = cv2.calcOpticalFlowPyrLK(prevImg, nextImg, prevPts, None, **lk_params)
+            prevPts = cv.goodFeaturesToTrack(frame, mask = None, **feature_params)
+            nextPts, status, err = cv.calcOpticalFlowPyrLK(prevImg, nextImg, prevPts, None, **lk_params)
      
         # Select good points
         # each element of the vector is set to 1 if the flow for the corresponding features has been found, otherwise, it is set to 0.
@@ -199,11 +199,11 @@ def optical_flow_lk(files):
         for i,(new,old) in enumerate(zip(good_new, good_old)):
             a,b = new.ravel()
             c,d = old.ravel()
-            mask = cv2.line(mask, (a,b),(c,d), color[i].tolist(), 2)
-            frame = cv2.circle(frame,(a,b),5,color[i].tolist(),-1)
-        img = cv2.add(frame,mask)
-        cv2.imshow('frame',img)
-        k = cv2.waitKey(30) & 0xff
+            mask = cv.line(mask, (a,b),(c,d), color[i].tolist(), 2)
+            frame = cv.circle(frame,(a,b),5,color[i].tolist(),-1)
+        img = cv.add(frame,mask)
+        cv.imshow('frame',img)
+        k = cv.waitKey(30) & 0xff
         if k == 27:
             break
         # Now update the previous frame and previous points
@@ -217,7 +217,7 @@ def optical_flow_dense(files):
     plot = get_init_heatmap_plot()
     first_frame = get_frame(files[0])
     prev_rgb = get_frame_RGB(files[0])
-    test = cv2.cvtColor(first_frame.astype("uint8"), cv2.COLOR_GRAY2BGR)
+    test = cv.cvtColor(first_frame.astype("uint8"), cv.COLOR_GRAY2BGR)
     hsv = np.zeros_like(test)
     hsv[...,1] = 255
     window_name = "optical_flow"
@@ -226,19 +226,19 @@ def optical_flow_dense(files):
 
     while counter < len(files):
         next_rgb = get_frame_RGB(files[counter])
-        flow = cv2.calcOpticalFlowFarneback(prev_rgb,next_rgb, None, 0.5, 3, 15, 3, 5, 1.2, 0) # to tune parameters
-        mag, ang = cv2.cartToPolar(flow[...,0], flow[...,1])
+        flow = cv.calcOpticalFlowFarneback(prev_rgb,next_rgb, None, 0.5, 3, 15, 3, 5, 1.2, 0) # to tune parameters
+        mag, ang = cv.cartToPolar(flow[...,0], flow[...,1])
         hsv[...,0] = ang*180/np.pi/2
-        hsv[...,2] = cv2.normalize(mag,None,0,255,cv2.NORM_MINMAX)
+        hsv[...,2] = cv.normalize(mag,None,0,255,cv.NORM_MINMAX)
         
         # plotting of grayscale flowmap and data heatmap
-        cv2.namedWindow(window_name,cv2.WINDOW_NORMAL)
-        cv2.resizeWindow(window_name, 120, 180)
-        cv2.imshow(window_name,hsv)
+        cv.namedWindow(window_name,cv.WINDOW_NORMAL)
+        cv.resizeWindow(window_name, 120, 180)
+        cv.imshow(window_name,hsv)
         update_heatmap(get_frame(files[counter]), plot)
         
         prev_rgb = next_rgb
-        k = cv2.waitKey(30) & 0xff
+        k = cv.waitKey(30) & 0xff
         # time.sleep(0.5)
         
         counter += 1

@@ -3,7 +3,7 @@ import time
 import numpy as np
 import serial
 
-from file_utils import save_as_npy
+from file_utils import save_as_npy, create_folder_if_absent
 from visualizer import init_heatmap, update_heatmap
 
 """
@@ -79,6 +79,8 @@ def save_serial_output(forever, num_samples=3000, mode=DEBUG_MODE):
         min_temp = 28
         max_temp = 40
         plot = init_heatmap("MLX90640 Heatmap", ARRAY_SHAPE, min_temp, max_temp)
+    elif mode == WRITE_MODE:
+        create_folder_if_absent(DATA_PATH)
         
     while to_read:
         try:

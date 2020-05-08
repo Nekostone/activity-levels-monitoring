@@ -17,6 +17,7 @@ Table of Contents
   - [Install necessary packages](#install-necessary-packages)
     - [Common Issues](#common-issues)
       - [There is a problem while installing packages...](#there-is-a-problem-while-installing-packages)
+      - [Pygifiscle](#pygifiscle)
       - [Matplotlib Visualization for Ubuntu Users](#matplotlib-visualization-for-ubuntu-users)
 - [Other Useful Resources](#other-useful-resources)
 
@@ -112,6 +113,12 @@ pip install -r requirements.txt
 #### There is a problem while installing packages...
 
 You need to have at least Python v3.5, some packages might not be available for lower versions.
+
+#### Pygifiscle 
+
+`FileNotFoundError: [Errno 2] No such file or directory: 'gifsicle': 'gifsicle'`
+
+Please refer to the [README.md of the repo](https://github.com/LucaCappelletti94/pygifsicle) and follow the instructions for your machine to resolve this error.
 
 #### Matplotlib Visualization for Ubuntu Users
 

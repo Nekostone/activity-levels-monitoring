@@ -64,3 +64,9 @@ grideye/MLX90640/SPARKFUN CODE/
 # Numpy 
 *.npy
 *.zip
+
+# Project
+pics
+godec_pics
+godec_data
+data
