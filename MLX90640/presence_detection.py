@@ -1,11 +1,15 @@
-import cv2
-import numpy as np
-from file_utils import get_frame, get_all_data_filenames
 import os
-from os.path import isfile, join
 import time
-from visualizer import init_heatmap, update_heatmap
+from os.path import isfile, join
+
+import cv2 as cv
 import matplotlib.pyplot as plt
+import numpy as np
+
+from background_subtraction import bs_godec
+from file_utils import (get_all_files, get_frame, get_frame_GREY,
+                        get_frame_RGB, normalize_frame)
+from visualizer import init_heatmap, update_heatmap
 
 # for plotting the heatmap of original data
 
@@ -113,17 +117,17 @@ def naive_detection_by_frame(frame):
 
     return areas_person_is_in
 
-def naive_detection_from_data(data_path, startIndex=None, endIndex=None):
+def naive_detection_from_files(data_path, startIndex=None, endIndex=None):
     heatmap_plot = get_init_heatmap_plot()
     likelihood_plot = get_init_likelihood_plot()
-    files = get_all_data_filenames(data_path)
+    files = get_all_files(data_path)
     if startIndex == None:
         startIndex = 0
     if endIndex == None:
         endIndex = len(files)
     print(startIndex, endIndex)
     for i in range(startIndex, endIndex):
-        frame = get_frame(files[i], data_path)
+        frame = get_frame(files[i])
         areas_person_is_in = naive_detection_by_frame(frame)
         likelihood_array = [[areas_person_is_in[i]["likelihood"] for i in range(4)], [areas_person_is_in[i]["likelihood"] for i in range(4,8)]]
         
@@ -152,20 +156,68 @@ def visualize_likelihood_plot(areas_person_is_in):
 """
 Optical Flow Algorithm
 """
-def convert_temp_to_rgb(df):
-    max_temp = np.amax(df)
-    min_temp = np.amin(df)
-    result = (df - min_temp) / (max_temp - min_temp) * 255
-    return  result 
 
-def get_frame_in_rgb(filename):
-    return convert_temp_to_rgb(get_frame(filename))
-
-def run_optical_flow(files):
+def optical_flow_lk(files):
+    print("Performing Lucas-Kanade Optical Flow")
     plot = get_init_heatmap_plot()
-    frame1 = get_frame(files[0])
-    prev = get_frame_in_rgb(files[0])
-    test = cv2.cvtColor(frame1.astype("uint8"), cv2.COLOR_GRAY2BGR)
+
+    # params for ShiTomasi corner detection
+    feature_params = dict( maxCorners = 4,
+                        qualityLevel = 0.2,
+                        minDistance = 6,
+                        blockSize = 4 )
+    # Parameters for lucas kanade optical flow
+    lk_params = dict( winSize  = (3,3),
+                    maxLevel = 3,
+                    criteria = (cv.TERM_CRITERIA_EPS | cv.TERM_CRITERIA_COUNT, 10, 0.03))
+
+    # Take first frame and find corners in it
+    first_frame_gray = get_frame_GREY(files[0])
+    prevPts = cv.goodFeaturesToTrack(first_frame_gray, mask = None, **feature_params)
+    color = np.random.randint(0,255,(100,3))
+    # Create a mask image for drawing purposes
+    mask = np.zeros_like(first_frame_gray)
+    counter = 1
+    prevImg = first_frame_gray
+    while counter < len(files):
+        frame = get_frame_GREY(files[counter])
+        cleaned_frame = bs_godec(frame)
+        nextImg = frame.copy()
+        update_heatmap(get_frame(files[counter]), plot)
+        # grayscale but uint8??
+        nextPts, status, err = cv.calcOpticalFlowPyrLK(prevImg, nextImg, prevPts, None, **lk_params)
+        if nextPts is None:
+            prevPts = cv.goodFeaturesToTrack(frame, mask = None, **feature_params)
+            nextPts, status, err = cv.calcOpticalFlowPyrLK(prevImg, nextImg, prevPts, None, **lk_params)
+     
+        # Select good points
+        # each element of the vector is set to 1 if the flow for the corresponding features has been found, otherwise, it is set to 0.
+        good_new = nextPts[status==1]
+        good_old = prevPts[status==1]
+    
+        # annotate the tracks
+        for i,(new,old) in enumerate(zip(good_new, good_old)):
+            a,b = new.ravel()
+            c,d = old.ravel()
+            mask = cv.line(mask, (a,b),(c,d), color[i].tolist(), 2)
+            frame = cv.circle(frame,(a,b),5,color[i].tolist(),-1)
+        img = cv.add(frame,mask)
+        cv.imshow('frame',img)
+        k = cv.waitKey(30) & 0xff
+        if k == 27:
+            break
+        # Now update the previous frame and previous points
+        prevImg = nextImg.copy()
+        prevPts = good_new.reshape(-1,1,2)
+        counter +=1
+    
+
+def optical_flow_dense(files):
+    print("Performing Dense Optical Flow")
+    plot = get_init_heatmap_plot()
+    first_frame = get_frame(files[0])
+    prev_rgb = get_frame_RGB(files[0])
+    test = cv.cvtColor(first_frame.astype("uint8"), cv.COLOR_GRAY2BGR)
     hsv = np.zeros_like(test)
     hsv[...,1] = 255
     window_name = "optical_flow"
@@ -173,22 +225,20 @@ def run_optical_flow(files):
     counter = 1
 
     while counter < len(files):
-        next = get_frame_in_rgb(files[counter])
-        flow = cv2.calcOpticalFlowFarneback(prev,next, None, 0.5, 3, 15, 3, 5, 1.2, 0) # to tune parameters
-        mag, ang = cv2.cartToPolar(flow[...,0], flow[...,1])
+        next_rgb = get_frame_RGB(files[counter])
+        flow = cv.calcOpticalFlowFarneback(prev_rgb,next_rgb, None, 0.5, 3, 15, 3, 5, 1.2, 0) # to tune parameters
+        mag, ang = cv.cartToPolar(flow[...,0], flow[...,1])
         hsv[...,0] = ang*180/np.pi/2
-        hsv[...,2] = cv2.normalize(mag,None,0,255,cv2.NORM_MINMAX)
+        hsv[...,2] = cv.normalize(mag,None,0,255,cv.NORM_MINMAX)
         
         # plotting of grayscale flowmap and data heatmap
-        cv2.namedWindow(window_name,cv2.WINDOW_NORMAL)
-        cv2.resizeWindow(window_name, 120, 180)
-        cv2.imshow(window_name,hsv[...,2])
+        cv.namedWindow(window_name,cv.WINDOW_NORMAL)
+        cv.resizeWindow(window_name, 120, 180)
+        cv.imshow(window_name,hsv)
         update_heatmap(get_frame(files[counter]), plot)
         
-        prev = next
-        k = cv2.waitKey(30) & 0xff
-        time.sleep(1)
+        prev_rgb = next_rgb
+        k = cv.waitKey(30) & 0xff
+        # time.sleep(0.5)
         
         counter += 1
-
-# run_optical_flow(files)

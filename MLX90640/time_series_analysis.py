@@ -1,13 +1,15 @@
-from collections import defaultdict
-from file_utils import get_all_data_filenames, get_frame, write_to_json
-from presence_detection import naive_binary_likelihood_by_frame
 import time
+from collections import defaultdict
+
+from file_utils import get_all_files, get_frame, write_to_json
+from presence_detection import naive_binary_likelihood_by_frame
+
 
 def analyze_by_period(files, num_frames=60*30):
     time_person_spent_in_areas = defaultdict(int)
     counter = 0
     while counter < num_frames:
-        frame = get_frame(files[counter], data_path)
+        frame = get_frame(files[counter])
         areas_person_is_in = naive_binary_likelihood_by_frame(frame)
         for area in areas_person_is_in:
             if areas_person_is_in[area]:
@@ -38,7 +40,7 @@ start = time.time()
 
 folder_name = "sw_first_trial"
 data_path = "./data/" + folder_name
-files = get_all_data_filenames(data_path)
+files = get_all_files(data_path)
 print("Number of frames: ", len(files))
 result = analyze()
 end = time.time()

@@ -1,15 +1,22 @@
 import os
-import matplotlib as mpl
-if os.environ.get('DISPLAY','') == '':
-    print('no display found. Using non-interactive Agg backend')
-    mpl.use('Agg')
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-import numpy as np
 import time
 from datetime import datetime
 
-def init_heatmap(title, frame_shape, min_value, max_value):
+import imageio
+import matplotlib.patches as patches
+import matplotlib.pyplot as plt
+import numpy as np
+from tqdm import tqdm
+
+from file_utils import create_folder_if_absent, get_frame, optimize_size
+
+"""
+===========================================
+Temperature Heatmap
+===========================================
+"""
+
+def init_heatmap(title, frame_shape=(24,32), min_value=25, max_value=40, show=True):
   """
   Initialize the heatmap figure plot.
   Returns a plot tuple (fig, ax, im).
@@ -18,7 +25,8 @@ def init_heatmap(title, frame_shape, min_value, max_value):
   frame = np.random.random(frame_shape)*0 # set empty array first
   im = plt.imshow(frame, cmap='hot', interpolation='nearest')
   plt.clim(min_value, max_value)
-  plt.show(block=False)
+  if show:
+    plt.show(block=False)
   ax.set_title(title)
   plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
             rotation_mode="anchor")
@@ -29,7 +37,8 @@ def init_heatmap(title, frame_shape, min_value, max_value):
 
 def update_heatmap(frame, plot):
   """
-  Given a plot tuple of (fig, ax, im), updates the plot with the new frame received.
+  Given a plot tuple of (fig, ax, im), 
+  updates the plot with the new frame received.
   """
   fig, ax, im = plot
   im.set_array(frame)
@@ -95,3 +104,57 @@ def time_series_plot_from_json(time_series_dict, single_day=False, save=False):
     plt.savefig("./time_series_plt.png")
   plt.show()
 
+"""
+===========================================
+Making GIFs
+===========================================
+"""
+  
+def write_gif(files, name, start=0, end=0, fps=1):
+  """
+  Primary function to write gifs.
+  - If file type given is .npy (temperature npy arrays),
+    then it will plot the heatmap and save these pics before making them into a gif.  
+  - If file type given is .png (godec plots),
+    then it will just make them into a gif directly.
+
+  Arguments:
+      files {string[]} -- result from get_all_files()
+      name {string} -- name of the gif to be saved
+
+  Keyword Arguments:
+      start {int} -- index of files (default: {0})
+      end {int} -- index of files (default: {0})
+      fps {int} -- frames per second (default: {1})
+  """
+  filename, file_extension = os.path.splitext(files[0])
+  create_folder_if_absent(os.path.dirname(files[0]))
+  if file_extension == ".png":
+    write_gif_from_pics(files, name, start=0, end=0, fps=1)
+  elif file_extension == ".npy":
+    write_gif_from_npy(files, name, start=0, end=0, fps=1)
+  
+def write_gif_from_npy(files, name, start=0, end=0, fps=1):
+  print("Plotting from {} numpy files and writing gif of {}...".format(len(files), fps))
+  plot = init_heatmap(name, show=False)
+  end = end or len(files)
+  with imageio.get_writer(name, mode='I', fps=fps) as writer:
+    for i in tqdm(range(start, end)):
+      f = get_frame(files[i])
+      update_heatmap(f, plot)
+      pic_name = "pics/"+files[i]+".png"
+      plt.savefig(pic_name)
+      writer.append_data(imageio.imread(pic_name))
+  writer.close()
+  print("Finished writing gif at {}.".format(name))
+  optimize_size(name)
+  
+def write_gif_from_pics(files, name, start=0, end=0, fps=1):
+  print("Converting {} pictures into a gif of {} fps...".format(len(files),fps))
+  end = end or len(files)
+  with imageio.get_writer(name, mode='I', fps=fps) as writer:
+    for i in tqdm(range(start, end)):
+      writer.append_data(imageio.imread(files[i]))
+  writer.close()
+  print("Finished writing gif at {}.".format(name))
+  optimize_size(name)
