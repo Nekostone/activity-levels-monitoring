@@ -3,7 +3,7 @@ import time
 import numpy as np
 import serial
 
-from file_utils import save_as_npy, create_folder_if_absent
+from file_utils import save_npy, create_folder_if_absent
 from visualizer import init_heatmap, update_heatmap
 
 """
@@ -20,6 +20,7 @@ ARRAY_SHAPE = (24,32)
 DEBUG_MODE = 1
 WRITE_MODE = 0
 DATA_PATH = "data/sw_second_trial_night" # change as it fits 
+DATA_DIR_SORT = "day"
 
 def interpolate_values(df):
     """
@@ -101,7 +102,7 @@ def save_serial_output(forever, num_samples=3000, mode=DEBUG_MODE):
 
                 elif mode == WRITE_MODE:
                     print("Saving npy object...", "[{}]".format(counter))
-                    save_as_npy(df, DATA_PATH)
+                    save_npy(df, DATA_PATH, directory_sort=DATA_DIR_SORT)
                 
             counter += 1
 
@@ -112,4 +113,4 @@ def save_serial_output(forever, num_samples=3000, mode=DEBUG_MODE):
             break
 
 if __name__ == "__main__":
-    save_serial_output(forever=True, mode=DEBUG_MODE) 
+    save_serial_output(forever=True, mode=WRITE_MODE) 
