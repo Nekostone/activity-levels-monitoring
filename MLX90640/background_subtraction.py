@@ -1,5 +1,3 @@
-import time
-
 import cv2 as cv
 from numpy import array, column_stack
 
@@ -8,7 +6,6 @@ from godec import godec, plot_godec
 
 def create_godec_input(files):
     i = 0
-    t = time.time()
     for f in files:
         frame = get_frame_GREY(f)
         # Stack frames as column vectors
@@ -19,8 +16,6 @@ def create_godec_input(files):
         else:
             M = column_stack((M, F))
         i+=1
-    elapsed = time.time() - t
-    print("Time taken to create M: " , elapsed, "seconds")
     return M, frame
 
 def bs_godec_trained(files, noise, debug=False):
@@ -31,10 +26,7 @@ def bs_godec_trained(files, noise, debug=False):
 
 def bs_godec(files, debug=False, gif_name=False):
     M , frame = create_godec_input(files)
-    t = time.time()
     L, S, LS, RMSE = godec(M, iterated_power=5)
-    elapsed = time.time() - t
-    print("Time taken to run Godec to create L, S, LS, RMSE: " , elapsed, " seconds")
     height, width = frame.shape
     return M, LS, L, S, width, height
 
