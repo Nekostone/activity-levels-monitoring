@@ -41,7 +41,7 @@ def folder_path(file):
     return dirname(file)
   
 def base_folder(file):
-  return basename(folder_path(file))
+  return basename(file)
 
 def create_folder_if_absent(folder_name):
   if not exists(folder_name):

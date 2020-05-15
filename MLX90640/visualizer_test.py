@@ -29,6 +29,15 @@ def test_plot(files):
     frame = get_frame(f)
     update_heatmap(frame,plot)
 
+def test_debug_plot(files):
+  array_shape = (24,32)
+  min_value = 25
+  max_value = 40
+  plot = init_heatmap("Heatmap", array_shape, min_value, max_value, debug=True)
+  for f in files:
+    frame = get_frame(f)
+    update_heatmap(frame,plot)
+
 def test_create_folder_if_absent(folder):
   create_folder_if_absent(folder)
 
@@ -36,6 +45,7 @@ def test_create_folder_if_absent(folder):
 def test_write_gif_from_npy(files, name, start_index=0, end_index=0, fps=5):
     write_gif_from_npy(files, name, start_index, end_index, fps)
 
-# data_path = "data/sw_first_trial"
+# data_path = "data/teck_first_trial"
 # files = get_all_files(data_path)
+# test_plot(files)
 # test_write_gif_from_npy(files, data_path+".gif", end_index=len(files), fps=60)

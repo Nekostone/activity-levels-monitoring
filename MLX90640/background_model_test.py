@@ -1,22 +1,28 @@
-from background_model import bg_model
-from background_subtraction import bs_godec, bs_godec_trained
-from file_utils import get_all_files, save_as_npy, create_folder_if_absent, base_folder, get_frame
-from godec import plot_godec, plot_bs_results
-from visualizer import write_gif
+import time
+
+# from background_model import bg_model
+from background_model import bg_model, bs_godec, bs_godec_trained
+from config import (bg_model_gifs_path, bg_model_pics_path, bs_pics_path,
+                    bs_results_path, godec_data_path, godec_gifs_path,
+                    godec_pics_path)
+from file_utils import (base_folder, create_folder_if_absent, get_all_files,
+                        get_frame, save_as_npy)
+from godec import plot_bs_results, plot_godec
 from timer import Timer
+from visualizer import write_gif
 
-data_path = "data/teck_first_trial"
-godec_data_path = "godec_data/"
-godec_pics_path = "godec_pics/"
-godec_gifs_path = "godec_gifs/"
-bs_pics_path = "bs_pics/"
-bs_results_path = "bs_results/"
 
-files = get_all_files(data_path)[0:2]
+def test_bs_godec(files, save_data=False, save_gif=False, gif_name=None, fps=60):
+    """Test bs_godec Implementation
 
-# TODO: Track time consumed with other methods instead of cluttering with time.time() statements 
-
-def test_godec(save_data=False, save_gif=False, gif_name=None, fps=60):
+    Keyword Arguments:
+        save_data {bool} -- (default: {False})
+        save_gif {bool} -- (default: {False})
+        gif_name {string} -- (default: {None})
+        fps {int} -- (default: {60})
+    ---
+    This test shows you different ways of running the bs_godec method and obtain the various type of data you need.
+    """
     print("Testing Godec...")
     t = Timer("accumulate")
     t.start()
@@ -55,17 +61,36 @@ def test_godec(save_data=False, save_gif=False, gif_name=None, fps=60):
     
     print("The entire process has taken: ", t.timers['accumulate'], " seconds")
 
-def test_godec_result_on_future(noise_path, gif_name, preview):
+def test_bs_godec_trained_noise(noise_path, gif_name, preview):
+    """Test bs_godec Implementation with trained noise
+
+    Keyword Arguments:
+        noise_path {string}
+        gif_name {string}
+        preview {boolean}
+    ---
+    This test shows you how to run the bs_godec method.
+    """
     N = get_frame(noise_path)
     M, R = bs_godec_trained(files, N)
     plot_bs_results(M, N, R, bs_pics_path, preview=preview)
+
+def test_background_model(files, debug=False, save=False):
+    bg_model(files, debug, save)
+    
+
+"""
+Initialization of test parameters
+"""
+    
+data_path = "data/teck_walk_out_and_in"
+files = get_all_files(data_path)
     
 """
 Test godec implementation
 """ 
-# gif_name = "teck_first_trial.gif"   
-# test_godec(gif_name=gif_name, fps=5, save_gif=True, save_data=True)
-test_godec()
+# test_bs_godec(files)
+# test_bs_godec(gif_name=base_folder(data_path)+".gif", fps=30, save_gif=True)
 
 """
 Test preobtained noise from godec with upcoming data
@@ -74,7 +99,16 @@ Test preobtained noise from godec with upcoming data
 # noise_path = godec_data_path + "data/S.npy"
 # gif_name = "bs_result_5mins_noise.gif"
 
-# test_godec_result_on_future(noise_path, gif_name, True)
+# test_bs_godec_trained_noise(noise_path, gif_name, True)
 # pics = get_all_files(bs_pics_path)
-# write_gif_from_pics(pics, godec_gifs_path+gif_name, start=0, end=len(pics), fps=30)
+# write_gif(pics, godec_gifs_path+gif_name, start=0, end=len(pics), fps=30)
 
+""""
+Test Background Model
+"""
+
+create_folder_if_absent(bg_model_pics_path)
+test_background_model(files, debug=True, save=True)
+pics = get_all_files(bg_model_pics_path)
+gif_name = base_folder(data_path)+".gif"
+write_gif(pics, bg_model_gifs_path+gif_name, start=0, end=len(pics), fps=30)
