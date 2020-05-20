@@ -1,12 +1,13 @@
 import time
 
 # from background_model import bg_model
-from background_model import bg_model, bs_godec, bs_godec_trained
+from background_model import (bg_model, bs_godec, bs_godec_trained, postprocess_img,
+                              compare_gaussian_blur, compare_median_blur, init_comparison_plot, update_comparison_plot)
 from config import (bg_model_gifs_path, bg_model_pics_path, bs_pics_path,
                     bs_results_path, godec_data_path, godec_gifs_path,
                     godec_pics_path)
 from file_utils import (base_folder, create_folder_if_absent, get_all_files,
-                        get_frame, save_as_npy)
+                        get_frame, get_frame_GREY, save_as_npy)
 from godec import plot_bs_results, plot_godec
 from timer import Timer
 from visualizer import write_gif
@@ -75,9 +76,23 @@ def test_bs_godec_trained_noise(noise_path, gif_name, preview):
     M, R = bs_godec_trained(files, N)
     plot_bs_results(M, N, R, bs_pics_path, preview=preview)
 
+def test_compare_median_blur(file):
+    compare_median_blur(get_frame_GREY(file))
+    
+def test_compare_gaussian_blur(file):
+    compare_gaussian_blur(get_frame_GREY(file))
+
 def test_background_model(files, debug=False, save=False):
     bg_model(files, debug, save)
     
+
+def test_postprocess_img(f):
+    img = get_frame_GREY(f)
+    images = postprocess_img(img)
+    images.insert(0, img)
+    subplt_titles = ["Original", "After Godec", "Blurred", " Thresholded", "Annotated"]
+    ims = init_comparison_plot(img, subplt_titles, 1, 5, title="Post Processing")
+    update_comparison_plot(ims, images, save=True, saveIndex=100)
 
 """
 Initialization of test parameters
@@ -103,12 +118,24 @@ Test preobtained noise from godec with upcoming data
 # pics = get_all_files(bs_pics_path)
 # write_gif(pics, godec_gifs_path+gif_name, start=0, end=len(pics), fps=30)
 
+"""
+Test Comparison Methods
+"""
+# i = 4
+# test_compare_median_blur(files[i])
+# test_compare_gaussian_blur(files[i])
+
+"""
+Test Postprocessing of Image
+"""
+
+# test_postprocess_img(files[i])
+
 """"
 Test Background Model
 """
 
-create_folder_if_absent(bg_model_pics_path)
-test_background_model(files, debug=True, save=True)
-pics = get_all_files(bg_model_pics_path)
-gif_name = base_folder(data_path)+".gif"
-write_gif(pics, bg_model_gifs_path+gif_name, start=0, end=len(pics), fps=30)
+# test_background_model(files, debug=True, save=True)
+# pics = get_all_files(bg_model_pics_path)
+# gif_name = base_folder(data_path)+"2.gif"
+# write_gif(pics, bg_model_gifs_path+gif_name, start=0, end=len(pics), fps=15)

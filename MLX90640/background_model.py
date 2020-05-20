@@ -96,7 +96,7 @@ def compare_bilateral_filter(img):
         im = cv.bilateralFilter(img, d=i, sigmaColor=75, sigmaSpace=75)
         images.append(im)
         subplt_titles.append("d = {}".format(i))
-    plot_comparison(images, subplt_titles, 2, 4, title="Bilateral Filter with sigmaColor=75, sigmaSpace=75", debug=True)
+    return images, subplt_titles
 
 def compare_gaussian_blur(img):
     images = []
@@ -105,7 +105,7 @@ def compare_gaussian_blur(img):
         im = cv.GaussianBlur(img,(i,i), 3)
         images.append(im)
         subplt_titles.append("ksize = {}".format(i))
-    plot_comparison(images, subplt_titles, 2, 4, title="Gaussian Blur", debug=True)
+    return images, subplt_titles
 
 def compare_average_blur(img):
     images = []
@@ -114,7 +114,7 @@ def compare_average_blur(img):
         im = cv.blur(img,(i,i))
         images.append(im)
         subplt_titles.append("ksize = {}".format((i,i)))
-    plot_comparison(images, subplt_titles, 2, 4, title="Average Blur", debug=True)
+    return images, subplt_titles
 
 def compare_median_blur(img):
     images = []
@@ -123,7 +123,7 @@ def compare_median_blur(img):
         im = cv.medianBlur(img,i)
         images.append(im)
         subplt_titles.append("ksize = {}".format(i))
-    plot_comparison(images, subplt_titles, 2, 4, title="Median Blur", debug=True)
+    return images, subplt_titles
     
 def compare_thresholds(original_img, cleaned_img):
     blurred = cv.medianBlur(cleaned_img,5)
@@ -135,9 +135,8 @@ def compare_thresholds(original_img, cleaned_img):
     images = [original_img, cleaned_img, blurred, th1, th2, th3]
     subplt_titles = ['Original Image', 'After Godec', 'Median Blur of 5', 'Global Thresholding (v = 127)',
         'Adaptive Mean Thresholding', 'Adaptive Gaussian Thresholding']
-    plot_comparison(images, subplt_titles, 2, 3, title="Thresholding", debug=True)
 
-def init_comparison_plot(frame, subplt_titles, num_rows, num_columns, title="", debug=False):
+def init_comparison_plot(frame, subplt_titles, num_rows, num_columns, title=""):
     fig, axs = plt.subplots(num_rows, num_columns)
     fig.suptitle(title)
     ims = []
@@ -145,46 +144,50 @@ def init_comparison_plot(frame, subplt_titles, num_rows, num_columns, title="", 
     if num_rows <= 1:
         for i in range(num_columns):
             axs[i].set_title(subplt_titles[i])
-            im = axs[i].imshow(frame, 'gray')
+            im = axs[i].imshow(frame, cmap='hot')
             ims.append(im)
             plt.xticks([]),plt.yticks([])
     else:
         counter = 0
-        for i in range(num_columns):
-            for j in range(num_rows):
-                axs[i,j].set_title(subplt_titles[counter])
-                im = axs[i,j].imshow(frame, 'gray')
-                ims.append(im)
-                counter +=1
-    if debug:
-        plt.show()
+        for i in range(num_rows):
+            for j in range(num_columns):
+                if len(subplt_titles) < counter:
+                    axs[i,j].set_title(subplt_titles[counter])
+                    im = axs[i][j].imshow(frame, 'gray')
+                    ims.append(im)
+                    counter +=1
     return ims    
 
-def update_comparison_plot(ims, images, saveIndex=None, debug=False, save=False):
+def update_comparison_plot(ims, images, saveIndex=None, save=False):
     for i in range(len(ims)):
         ims[i].set_data(images[i])
     plt.draw()
-    if debug:
-        plt.pause(.01) # required for very small datasets for previewing
     if save:
         print("saving...")
+        create_folder_if_absent(bg_model_pics_path)
         pic_name = '{}{}.png'.format(bg_model_pics_path, saveIndex)
         plt.savefig(pic_name)
 
-def plot_comparison(images, subplt_titles, num_rows, num_columns, title=""):
-    assert len(images) == len(subplt_titles)
-    ims = init_comparison_plot(subplt_titles, num_rows, num_columns, title="")
-    update_comparison_plot(ims, images)
+def compare_plot(images, subplt_titles, num_rows, num_columns, title="", debug=False):
+    fig, axs = plt.subplots(num_rows, num_columns)
+    axs[0,0].imshow(images[2], 'gray')
+    plt.show()
 
 """
 Postprocessing Pipeline
 """
 
+def is_human_contour(cnt):
+    return cv.contourArea(cnt) > 4 and cv.contourArea(cnt) < 12
+
 def postprocess_img(img):
     blurred_img = cv.medianBlur(img,5)
     _, thresholded_img = cv.threshold(blurred_img,127,255,cv.THRESH_BINARY)
-    blob_detector = init_blob_detector()
-    annotated_img = detect(thresholded_img, blob_detector)
+    mask = thresholded_img.copy()
+    contours, hierarchy = cv.findContours(mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+    color_img = cv.cvtColor(mask, cv.COLOR_GRAY2BGR)
+    selected_contours = [cnt for cnt in contours if is_human_contour(cnt)]
+    annotated_img = cv.drawContours(color_img, selected_contours, -1, (0,255,0), 1)
     images = [img, blurred_img, thresholded_img, annotated_img]
     return images
 
@@ -209,8 +212,9 @@ def bg_model(files, debug=False, save=False):
             L_frame = normalize_frame(L[:, i].reshape(width, height).T)
             S_frame = normalize_frame(S[:, i].reshape(width, height).T)
             M_frame = normalize_frame(M[:, i].reshape(width, height).T)
-            # L or S could be the clean data depending on how much movement has occured during the timeframe
+            # TODO: L or S could be the clean data depending on how much movement has occured during the timeframe
             img = S_frame
+            # compare_median_blur(img)
             images = postprocess_img(img)
             images.insert(0, get_frame_GREY(files[i]))
-            update_comparison_plot(ims, images, i, debug, save)
+            update_comparison_plot(ims, images, i, save)
