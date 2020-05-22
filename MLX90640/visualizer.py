@@ -10,6 +10,7 @@ from tqdm import tqdm
 
 from file_utils import create_folder_if_absent, get_frame, optimize_size
 
+
 """
 ===========================================
 Temperature Heatmap
@@ -128,11 +129,11 @@ def write_gif(files, name, start=0, end=0, fps=1):
       fps {int} -- frames per second (default: {1})
   """
   filename, file_extension = os.path.splitext(files[0])
-  create_folder_if_absent(os.path.dirname(files[0]))
+  create_folder_if_absent(os.path.dirname(name))
   if file_extension == ".png":
-    write_gif_from_pics(files, name, start=0, end=0, fps=1)
+    write_gif_from_pics(files, name, start, end, fps)
   elif file_extension == ".npy":
-    write_gif_from_npy(files, name, start=0, end=0, fps=1)
+    write_gif_from_npy(files, name, start, end, fps)
   
 def write_gif_from_npy(files, name, start=0, end=0, fps=1):
   print("Plotting from {} numpy files and writing gif of {}...".format(len(files), fps))
