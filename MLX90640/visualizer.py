@@ -11,7 +11,6 @@ from tqdm import tqdm
 from file_utils import (create_folder_if_absent, folder_path, get_frame,
                         optimize_size)
 
-
 """
 ===========================================
 Temperature Heatmap
@@ -34,7 +33,6 @@ def init_heatmap(title="", frame_shape=(24,32), min_value=25, max_value=40, show
   Returns:
       [(fig, ax, im)] -- plot tuple that can be manipulated with update_heatmap(frame, plot) later.
   """  
-  
   fig, ax = plt.subplots()
   frame = np.random.random(frame_shape)*0 # set empty array first
   im = plt.imshow(frame, cmap='hot', interpolation='nearest')

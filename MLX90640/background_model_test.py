@@ -1,6 +1,4 @@
 import time
-
-# from background_model import bg_model
 from background_model import (bg_model, bs_godec, bs_godec_trained, postprocess_img,
                               compare_gaussian_blur, compare_median_blur, init_comparison_plot, update_comparison_plot)
 from config import (bg_model_gifs_path, bg_model_pics_path, bs_pics_path,
@@ -85,7 +83,6 @@ def test_compare_gaussian_blur(file):
 def test_background_model(files, debug=False, save=False):
     bg_model(files, debug, save)
     
-
 def test_postprocess_img(f):
     img = get_frame_GREY(f)
     images = postprocess_img(img)
@@ -96,8 +93,7 @@ def test_postprocess_img(f):
 
 """
 Initialization of test parameters
-"""
-    
+""" 
 data_path = "data/teck_walk_out_and_in"
 files = get_all_files(data_path)
     
@@ -110,7 +106,6 @@ Test godec implementation
 """
 Test preobtained noise from godec with upcoming data
 """
-
 # noise_path = godec_data_path + "data/S.npy"
 # gif_name = "bs_result_5mins_noise.gif"
 

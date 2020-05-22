@@ -50,36 +50,6 @@ Best results attained so far:
 - Thresholding Method - global binary thresholding
 """
 
-def init_blob_detector():
-    params = cv.SimpleBlobDetector_Params()
-    # Change thresholds
-    params.minThreshold = 127
-    params.maxThreshold = 255
-
-    # Filter by Area.
-    params.filterByArea = True
-    params.minArea = 4
-
-    # Filter by Circularity
-    params.filterByCircularity = True
-    params.minCircularity = 0.1
-
-    # Filter by Convexity
-    params.filterByConvexity = True
-    params.minConvexity = 0.3
-
-    # Filter by Inertia
-    params.filterByInertia = True
-    params.minInertiaRatio = 0.01
-    detector = cv.SimpleBlobDetector_create(params)
-    return detector
-
-def detect(img, detector):
-    keypoints = detector.detect(img)
-    im = cv.drawKeypoints(img, keypoints, np.array([]), (0,0,255), cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-    return im
-
-
 def compare_bilateral_filter(img):
     """Compare Bilateral Filter effect with different parameters. A slow filter.
     ---

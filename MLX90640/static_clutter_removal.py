@@ -39,7 +39,6 @@ def static_clutter_algo(data):
 
         backgrounds.append(background)
         r = get_frame_GREY(data[i]) - background
-        print(r + background == get_frame_GREY(data[i]))
         result.append(r)
 
     return result, backgrounds

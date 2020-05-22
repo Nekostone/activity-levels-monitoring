@@ -8,12 +8,19 @@ import cv2 as cv
 import numpy as np
 from pygifsicle import optimize
 
-
-def save_as_npy(df, data_path, name=None):
-  file = name or time.strftime("%Y%m%d_%H%M%S",time.localtime(time.time()))
-  np.save(join(data_path,file), df)
-
-
+def save_npy(df, data_path, name=None, directory_sort=None):
+  file = name or time.strftime("%Y.%m.%d_%H%M%S",time.localtime(time.time()))
+  save_path = data_path
+  if directory_sort == "day":
+    save_path = time.strftime("%Y.%m.%d",time.localtime(time.time()))
+    save_path = join(data_path, save_path)
+    create_folder_if_absent(save_path)
+  elif directory_sort == "hour":
+    save_path = time.strftime("%Y.%m.%d_%H00",time.localtime(time.time()))
+    save_path = join(data_path, save_path)
+    create_folder_if_absent(save_path)
+  np.save(join(save_path,file), df)
+    
 def get_all_files(data_path):
     return sorted([join(data_path, f) for f in listdir(data_path) if isfile(join(data_path, f))])
 
