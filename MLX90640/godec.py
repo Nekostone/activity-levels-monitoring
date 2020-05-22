@@ -94,7 +94,7 @@ def godec(M, rank=1, card=None, iterated_power=1, max_iter=100, tol=0.001):
 Godec Plots
 """
 
-def init_godec_plot(M, LS, L, S, width, height):
+def init_godec_plot(M, LS, L, S, width, height, preview=False):
     M_frame = M[:, 0].reshape(width, height).T
     L_frame = L[:, 0].reshape(width, height).T
     S_frame = S[:, 0].reshape(width, height).T
@@ -108,9 +108,11 @@ def init_godec_plot(M, LS, L, S, width, height):
     im2 = axs[0, 1].imshow(LS_frame,  cmap='hot', interpolation='nearest')
     im3 = axs[1, 0].imshow(L_frame,  cmap='hot', interpolation='nearest')
     im4 = axs[1, 1].imshow(S_frame,  cmap='hot', interpolation='nearest')
+    if preview:
+        plt.show()
     return im1, im2, im3, im4
 
-def get_reshaped_frames(matrixes, i, width, height):
+def get_reshaped_frames(matrixes, i, width=32, height=24):
     return [matrix[:, i+1].reshape(width, height).T for matrix in matrixes]
 
 def set_data(ims, frames):
@@ -120,11 +122,9 @@ def set_data(ims, frames):
 
 def plot_godec(M, LS, L, S, folder_path, width=32, height=24, length=None, preview=False):
     length = M.shape[1] if length is None else length
-    ims = init_godec_plot(M, LS, L, S, width, height)
+    ims = init_godec_plot(M, LS, L, S, width, height, preview)
     matrixes = (M, LS, L, S)
     create_folder_if_absent(folder_path)
-    if preview:
-        plt.show()
     for i in tqdm(range(length-1)):
         frames = get_reshaped_frames(matrixes, i, width, height)
         set_data(ims, frames)

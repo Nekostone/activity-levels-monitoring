@@ -19,9 +19,8 @@ def save_npy(df, data_path, name=None, directory_sort=None):
     save_path = time.strftime("%Y.%m.%d_%H00",time.localtime(time.time()))
     save_path = join(data_path, save_path)
     create_folder_if_absent(save_path)
-    
   np.save(join(save_path,file), df)
-
+    
 def get_all_files(data_path):
     return sorted([join(data_path, f) for f in listdir(data_path) if isfile(join(data_path, f))])
 
@@ -62,5 +61,3 @@ def optimize_size(file):
   optimize(file)
   after_size = getsize(file)
   print("Original Size: {}. Optimized to {}.".format(before_size, after_size))
-
-  

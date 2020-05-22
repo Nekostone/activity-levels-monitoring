@@ -39,7 +39,6 @@ def static_clutter_algo(data):
 
         backgrounds.append(background)
         r = get_frame_GREY(data[i]) - background
-        # print(r + background == get_frame_GREY(data[i]))
         result.append(r)
 
     return result, backgrounds
@@ -72,7 +71,7 @@ def static_clutter_algo(data):
 
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@__xxXX__TEST____XXxx@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-data = get_all_files("data/teck_three_hours")
+data = get_all_files("data/teck_walk_out_and_in")
 result, backgrounds = static_clutter_algo(data)
 
 plt.subplot(131)
