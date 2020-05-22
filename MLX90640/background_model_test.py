@@ -1,6 +1,6 @@
 from background_model import bg_model
 from background_subtraction import bs_godec, bs_godec_trained
-from file_utils import get_all_files, save_as_npy, create_folder_if_absent, base_folder, get_frame
+from file_utils import get_all_files, save_npy, create_folder_if_absent, base_folder, get_frame
 from godec import plot_godec, plot_bs_results
 from visualizer import write_gif_from_pics
 import time
@@ -27,10 +27,10 @@ def test_godec(save_data=False, save_gif=False, gif_name=None, fps=60):
         
         npy_path = "godec_data/" + base_folder(data_path) 
         create_folder_if_absent(godec_data_path)
-        save_as_npy(M, npy_path, "M")
-        save_as_npy(L, npy_path, "L")
-        save_as_npy(S, npy_path, "S")
-        save_as_npy(LS, npy_path, "LS")
+        save_npy(M, npy_path, "M")
+        save_npy(L, npy_path, "L")
+        save_npy(S, npy_path, "S")
+        save_npy(LS, npy_path, "LS")
         
         elapsed = time.time() - t
         print("Time taken to save godec result npy arrays: " , elapsed, " seconds")
