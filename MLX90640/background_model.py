@@ -196,7 +196,8 @@ def bg_model(files, debug=False, save=False):
     """Background modeling process
     1. perform godec background subtraction
     2. thresholding to make actual pixels representing the person to be more salient in the frame
-    3. naive detection / optical flow. 
+    3. Contour detection to detect centroid of person 
+    4. naive detection / optical flow. 
 
     Arguments:
         files {[str]} -- Array obtained from get_all_files(data_path)
@@ -213,6 +214,8 @@ def bg_model(files, debug=False, save=False):
             S_frame = normalize_frame(S[:, i].reshape(width, height).T)
             M_frame = normalize_frame(M[:, i].reshape(width, height).T)
             # TODO: L or S could be the clean data depending on how much movement has occured during the timeframe
+            # TODO: maybe can perform contour detection first before deciding L or S is the clean frame
+            
             img = S_frame
             # compare_median_blur(img)
             images = postprocess_img(img)
