@@ -5,7 +5,7 @@ from config import (bg_model_gifs_path, bg_model_pics_path, bs_pics_path,
                     bs_results_path, godec_data_path, godec_gifs_path,
                     godec_pics_path)
 from file_utils import (base_folder, create_folder_if_absent, get_all_files,
-                        get_frame, get_frame_GREY, save_as_npy)
+                        get_frame, get_frame_GREY, save_npy)
 from godec import plot_bs_results, plot_godec
 from timer import Timer
 from visualizer import write_gif
@@ -33,10 +33,10 @@ def test_bs_godec(files, save_data=False, save_gif=False, gif_name=None, fps=60)
         
         npy_path = "godec_data/" + base_folder(data_path) 
         create_folder_if_absent(godec_data_path)
-        save_as_npy(M, npy_path, "M")
-        save_as_npy(L, npy_path, "L")
-        save_as_npy(S, npy_path, "S")
-        save_as_npy(LS, npy_path, "LS")
+        save_npy(M, npy_path, "M")
+        save_npy(L, npy_path, "L")
+        save_npy(S, npy_path, "S")
+        save_npy(LS, npy_path, "LS")
         
         t.stop("Time taken to save godec result npy arrays: " )
     
@@ -94,7 +94,7 @@ def test_postprocess_img(f):
 """
 Initialization of test parameters
 """ 
-data_path = "data/teck_walk_out_and_in"
+data_path = "data/sw_second_trial"
 files = get_all_files(data_path)
     
 """
@@ -130,7 +130,7 @@ Test Postprocessing of Image
 Test Background Model
 """
 
-# test_background_model(files, debug=True, save=True)
-# pics = get_all_files(bg_model_pics_path)
-# gif_name = base_folder(data_path)+"2.gif"
-# write_gif(pics, bg_model_gifs_path+gif_name, start=0, end=len(pics), fps=15)
+test_background_model(files, debug=True, save=True)
+pics = get_all_files(bg_model_pics_path)
+gif_name = base_folder(data_path)+"2.gif"
+write_gif(pics, bg_model_gifs_path+gif_name, start=0, end=len(pics), fps=15)
