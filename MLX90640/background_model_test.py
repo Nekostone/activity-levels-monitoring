@@ -83,7 +83,7 @@ def test_compare_gaussian_blur(file):
 def test_background_model(files, debug=False, save=False):
     bg_model(files, debug, save)
     
-def test_postprocess_img(f, plot=False):
+def test_postprocess_img(f,  plot=False):
     img = get_frame_GREY(f)
     images, centroids = postprocess_img(img)
     if plot:
