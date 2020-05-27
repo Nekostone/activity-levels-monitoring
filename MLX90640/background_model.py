@@ -159,7 +159,16 @@ def postprocess_img(img):
     selected_contours = [cnt for cnt in contours if is_human_contour(cnt)]
     annotated_img = cv.drawContours(color_img, selected_contours, -1, (0,255,0), 1)
     images = [img, blurred_img, thresholded_img, annotated_img]
-    return images
+    centroids = []
+    if len(selected_contours) > 0:
+        centroids = [get_centroid_from_contour(cnt) for cnt in selected_contours]
+    return images, centroids
+
+def get_centroid_from_contour(cnt):
+    M = cv.moments(cnt)
+    cx = int(M['m10']/M['m00'])
+    cy = int(M['m01']/M['m00'])
+    return (cx,cy)
 
 
 def bg_model(files, debug=False, save=False):
