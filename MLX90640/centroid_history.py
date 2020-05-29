@@ -1,15 +1,18 @@
-import copy
-
-import numpy as np
-
 from background_model import postprocess_img
-from file_utils import get_frame_GREY
+import numpy as np
+from file_utils import get_frame, get_frame_GREY, get_all_files
+import copy
+import matplotlib.pyplot as plt
 
 
-def get_centroid_history(files):
+data = "data/teck_walk_out_and_in"
+files = get_all_files(data)
+
+
+def get_centroid_history(arrays):
     centroid_history = []
-    for i in range(len(files)):
-        img = get_frame_GREY(files[i])
+    for i in range(len(arrays)):
+        img = get_frame_GREY(arrays[i])
 
         #  get images and centroids
         #  images array contains: [img, blurred_img, thresholded_img, annotated_img]
@@ -74,3 +77,28 @@ class Interpolator:
                         self.history[self.none_block[0] + k] = (np.round(start_x + (k+1)*x_interval), np.round(start_y + (k+1)*y_interval))
 
                 self.none_block = []
+                
+def plot_centroid_history(interp_history):
+    x = [x[0] for x in interp_history if x!= None]
+    y = [32-x[1] for x in interp_history if x!= None]
+    xmin = min(x)
+    xmax = max(x)
+    ymin = min(y)
+    ymax = max(y)
+    fig, axs = plt.subplots(ncols=2, sharey=True, figsize=(7, 4))
+    fig.subplots_adjust(hspace=0.5, left=0.07, right=0.93)
+    ax = axs[0]
+    hb = ax.hexbin(x, y, gridsize=30, cmap='inferno')
+    ax.axis([xmin, xmax, ymin, ymax])
+    ax.set_title("Centroid History")
+    cb = fig.colorbar(hb, ax=ax)
+    cb.set_label('counts')
+
+    ax = axs[1]
+    hb = ax.hexbin(x, y, gridsize=30, bins='log', cmap='inferno')
+    ax.axis([xmin, xmax, ymin, ymax])
+    ax.set_title("With a log color scale")
+    cb = fig.colorbar(hb, ax=ax)
+    cb.set_label('log10(N)')
+
+    plt.show()
