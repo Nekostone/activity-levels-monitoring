@@ -1,16 +1,15 @@
-from background_model import postprocess_img
-import numpy as np
-from file_utils import get_frame, get_frame_GREY, get_all_files
 import copy
 
-data = "data/teck_walk_out_and_in"
-files = get_all_files(data)
+import numpy as np
+
+from background_model import postprocess_img
+from file_utils import get_frame_GREY
 
 
-def get_centroid_history(arrays):
+def get_centroid_history(files):
     centroid_history = []
-    for i in range(len(arrays)):
-        img = get_frame_GREY(arrays[i])
+    for i in range(len(files)):
+        img = get_frame_GREY(files[i])
 
         #  get images and centroids
         #  images array contains: [img, blurred_img, thresholded_img, annotated_img]
@@ -75,26 +74,3 @@ class Interpolator:
                         self.history[self.none_block[0] + k] = (np.round(start_x + (k+1)*x_interval), np.round(start_y + (k+1)*y_interval))
 
                 self.none_block = []
-
-
-
-# ------------------------------------------------ TESTs ---------------------------------------------------------
-
-# tests get_centroid_history
-
-# print(len(files) == len(get_centroid_history(files)))
-# for a in range(len(files)):
-#     image = get_frame_GREY(files[a])
-#     imgs, centrds = postprocess_img(image)
-#     print(centrds)
-# print(get_centroid_history(files))
-
-# tests the interpolator
-history = get_centroid_history(files)
-# print(history)
-interp = Interpolator(history)
-for a in range(len(history)):
-    interp.none_checker(history[a], a)
-print(interp.history)
-print("\n")
-print(history)
