@@ -1,4 +1,4 @@
-from background_model import postprocess_img
+from background_subtraction import postprocess_img
 import numpy as np
 from file_utils import get_frame, get_frame_GREY, get_all_files
 import copy

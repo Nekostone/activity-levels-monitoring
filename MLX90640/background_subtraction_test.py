@@ -1,7 +1,7 @@
 import time
-from background_model import (bg_model, bs_godec, bs_godec_trained, postprocess_img, get_centroid_from_contour,
+from background_subtraction import (bg_subtraction, bs_godec, bs_godec_trained, postprocess_img, get_centroid_from_contour,
                               compare_gaussian_blur, compare_median_blur, init_comparison_plot, update_comparison_plot)
-from config import (bg_model_gifs_path, bg_model_pics_path, bs_pics_path,
+from config import (bg_subtraction_gifs_path, bg_subtraction_pics_path, bs_pics_path,
                     bs_results_path, godec_data_path, godec_gifs_path,
                     godec_pics_path)
 from file_utils import (base_folder, create_folder_if_absent, get_all_files,
@@ -80,8 +80,8 @@ def test_compare_median_blur(file):
 def test_compare_gaussian_blur(file):
     compare_gaussian_blur(get_frame_GREY(file))
 
-def test_background_model(files, debug=False, save=False):
-    bg_model(files, debug, save)
+def test_background_subtraction(files, debug=False, save=False):
+    bg_subtraction(files, debug, save)
     
 def test_postprocess_img(f,  plot=False):
     img = get_frame_GREY(f)
@@ -97,7 +97,7 @@ def test_postprocess_img(f,  plot=False):
 """
 Initialization of test parameters
 """ 
-data_path = "data/teck_walk_out_and_in"
+data_path = "data/teck_first_trial"
 files = get_all_files(data_path)
     
 """
@@ -119,7 +119,7 @@ Test preobtained noise from godec with upcoming data
 """
 Test Comparison Methods
 """
-i = 4
+# i = 4
 # test_compare_median_blur(files[i])
 # test_compare_gaussian_blur(files[i])
 
@@ -127,13 +127,13 @@ i = 4
 Test Postprocessing of Image
 """
 
-test_postprocess_img(files[i], plot=True)
+# test_postprocess_img(files[i], plot=True)
 
 """"
 Test Background Model
 """
 
-# test_background_model(files, debug=True, save=True)
-# pics = get_all_files(bg_model_pics_path)
-# gif_name = base_folder(data_path)+"2.gif"
-# write_gif(pics, bg_model_gifs_path+gif_name, start=0, end=len(pics), fps=15)
+test_background_subtraction(files, debug=True, save=True)
+pics = get_all_files(bg_subtraction_pics_path)
+gif_name = base_folder(data_path)+"2.gif"
+write_gif(pics, bg_subtraction_gifs_path+gif_name, start=0, end=len(pics), fps=15)

@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 
 from file_utils import get_all_files
-from presence_detection import (get_frame, naive_binary_likelihood_by_frame,
+from naive_presence_detection import (get_frame, naive_binary_likelihood_by_frame,
                                 naive_detection_by_frame,
                                 naive_detection_from_files,
                                 optical_flow_dense, optical_flow_lk,
@@ -33,14 +33,15 @@ def test_naive_all_frames():
 def test_naive_binary_likelihood():
     test_frame = get_frame(files[60*20])
     result = naive_binary_likelihood_by_frame(test_frame)
-    
-""" 
-Optical Flow Tests
-"""
-def test_opticalflow_lk():
-    optical_flow_lk(files)
-    
-def test_opticalflow_dense():
-    optical_flow_dense(files)
 
-test_opticalflow_lk()
+def test_naive_presence_detection_pipeline():
+    start = time.time()
+    folder_name = "sw_first_trial"
+    data_path = "./data/" + folder_name
+    files = get_all_files(data_path)
+    print("Number of frames: ", len(files))
+    result = analyze()
+    end = time.time()
+
+    print("Analysis completed in ", end-start, "seconds")
+    write_to_json(result, "./sample_time_series_results/{}.json".format(folder_name))
