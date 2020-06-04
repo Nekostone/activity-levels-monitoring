@@ -5,7 +5,7 @@ Table of Contents
 - [Setup Instructions](#setup-instructions)
   - [Hardware Datasheets](#hardware-datasheets)
   - [Hardware Setup](#hardware-setup)
-    - [Grideye MLX90640](#grideye-mlx90640)
+    - [MLX90640](#mlx90640)
       - [Setup with M5Stack](#setup-with-m5stack)
       - [Setup with ESP32](#setup-with-esp32)
       - [Data Collection & Visualization](#data-collection--visualization)
@@ -24,7 +24,7 @@ Table of Contents
 ## Hardware Datasheets
 
 - [Grideye AMG8833](https://cdn.sparkfun.com/assets/4/1/c/0/1/Grid-EYE_Datasheet.pdf)
-- [Grideye MLX90640](https://www.melexis.com/en/documents/documentation/datasheets/datasheet-mlx90640)
+- [MLX90640](https://www.melexis.com/en/documents/documentation/datasheets/datasheet-mlx90640)
 - [PIR Sensor HC-SR501](http://www.datasheetcafe.com/hc-sr501-datasheet-detector/)
 - [ESP32](https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf)
 - [ESP8266](https://www.espressif.com/en/products/hardware/esp8266ex/overview)
@@ -34,7 +34,7 @@ Table of Contents
 
 The listed hardware below are the ones that we have personally tested before, but not all are implemented in the final solution. 😅 Hopefully these will still be useful in your debugging!
 
-### Grideye MLX90640
+### MLX90640
 
 #### Setup with M5Stack
 
@@ -46,15 +46,15 @@ The listed hardware below are the ones that we have personally tested before, bu
 
 #### Data Collection & Visualization
 
-The code for data collection and visualization can be found in `grideye/MLX90640/__main__.py`.
+The code for data collection and visualization can be found in `MLX90640/__main__.py`.
 
 Here are some parameters that you need to be aware of and change accordingly.
 
 1. **Mode of the program:**
    - `DEBUG_MODE` to visualize the real-time heatmap plot only
    - `WRITE_MODE` to store the serial output data as `.npy` objects.
-     - By default, the name of the numpy object is of the following format e.g. `20200406_222532_grideye.npy`.
-     - If you would like to change this, you would have to go to `grideye/MLX90640/file_utils.py` to change it.
+     - By default, the name of the numpy object is of the following format e.g. `20200406_222532.npy`.
+     - If you would like to change this, you would have to go to `MLX90640/file_utils.py` to change it.
 2. **Serial parameters initialization:**
    - `SERIAL_PORT`: Check if the serial port that you are using corresponds to what is indicated in the program. If not, change it. Otherwise you will encounter a Permission Error in accessing a port.
    - `BAUD_RATE`: Check with your arduino code.
@@ -64,7 +64,7 @@ Here are some parameters that you need to be aware of and change accordingly.
 After the parameters are settled, you can now run the program as such.
 
 ```python
-python grideye/MLX90640
+python MLX90640
 ```
 
 #### Why is there missing pixels in my visualization?

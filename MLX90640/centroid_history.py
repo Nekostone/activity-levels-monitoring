@@ -1,4 +1,4 @@
-from background_model import postprocess_img
+from background_subtraction import postprocess_img
 import numpy as np
 from file_utils import get_frame, get_frame_GREY, get_all_files
 import copy
@@ -8,39 +8,38 @@ import matplotlib.pyplot as plt
 data = "data/teck_walk_out_and_in"
 files = get_all_files(data)
 
-
-def get_centroid_history(arrays):
-    centroid_history = []
-    for i in range(len(arrays)):
-        img = get_frame_GREY(arrays[i])
-
-        #  get images and centroids
-        #  images array contains: [img, blurred_img, thresholded_img, annotated_img]
-        images, centroids = postprocess_img(img)
-
-        if i == 0:
-            centroid_history.append(centroids[0])  # pick the first centroid of the first frame. Not the most accurate but yolo
-        else:
-            prev_centroid = centroid_history[i - 1]
-            if len(centroids) > 1 and prev_centroid:  # if the subsequent frames have more than one centroid then we use the one closest to the previous centroid
+def append_centroid_history(centroids, i, centroid_history):
+    if len(centroids) == 1:
+        centroid_history.append(centroids[0])
+        return
+        
+    if i == 0:
+        centroid_history.append(centroids[0])  # pick the first centroid of the first frame. Not the most accurate but yolo
+    else:
+        prev_centroid = centroid_history[i - 1]
+        if len(centroids) > 1:
+            if prev_centroid:  # if the subsequent frames have more than one centroid then we use the one closest to the previous centroid
                 prev_centroid = centroid_history[i-1]
-                distances = []
+                distances = np.zeros(len(centroids))
                 for j in range(len(centroids)):
                     x_disp = prev_centroid[0]-centroids[j][0]
                     y_disp = prev_centroid[1]-centroids[j][1]
-                    distance = np.sqrt(x_disp**2 + y_disp**2)
-                    distances.append(distance)
-                desired_centroid = distances.index(min(distances))
-                centroid_history.append(centroids[desired_centroid])
+                    distance = (x_disp**2 + y_disp**2)**(1/2)
+                    distances[j] = distance
+                desired_centroid_index = np.argmin(distances)
+                centroid_history.append(centroids[desired_centroid_index])
 
-            elif len(centroids) > 1 and not prev_centroid:  # if your first few frames were None and your first frame with centroids has multiple
+            elif not prev_centroid:  # if your first few frames were None and your first frame with centroids has multiple, just pick the first one
                 centroid_history.append(centroids[0])
+        else:
+            centroid_history.append(None)
 
-            elif len(centroids) == 1:
-                centroid_history.append(centroids[0])
-
-            else:
-                centroid_history.append(None)
+def get_centroid_history(files):
+    centroid_history = []
+    for i in range(len(files)):
+        img = get_frame_GREY(files[i])
+        images, centroids = postprocess_img(img)
+        append_centroid_history(centroids, i, centroid_history)
 
     return np.array(centroid_history)
 
@@ -88,14 +87,14 @@ def plot_centroid_history(interp_history):
     fig, axs = plt.subplots(ncols=2, sharey=True, figsize=(7, 4))
     fig.subplots_adjust(hspace=0.5, left=0.07, right=0.93)
     ax = axs[0]
-    hb = ax.hexbin(x, y, gridsize=30, cmap='inferno')
+    hb = ax.hexbin(x, y, gridsize=32, cmap='inferno')
     ax.axis([xmin, xmax, ymin, ymax])
     ax.set_title("Centroid History")
     cb = fig.colorbar(hb, ax=ax)
     cb.set_label('counts')
 
     ax = axs[1]
-    hb = ax.hexbin(x, y, gridsize=30, bins='log', cmap='inferno')
+    hb = ax.hexbin(x, y, gridsize=32, bins='log', cmap='inferno')
     ax.axis([xmin, xmax, ymin, ymax])
     ax.set_title("With a log color scale")
     cb = fig.colorbar(hb, ax=ax)
