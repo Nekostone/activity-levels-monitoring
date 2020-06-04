@@ -1,5 +1,6 @@
 import os
 import time
+from collections import defaultdict
 from os.path import isfile, join
 
 import cv2 as cv
@@ -9,6 +10,7 @@ import numpy as np
 from file_utils import (get_all_files, get_frame, get_frame_GREY,
                         get_frame_RGB, normalize_frame)
 from visualizer import init_heatmap, update_heatmap
+
 
 def get_init_heatmap_plot():
     array_shape = (24,32)
@@ -140,7 +142,6 @@ def visualize_likelihood_plot(areas_person_is_in):
 
     ax.set_xticks(np.arange(4))
     ax.set_yticks(np.arange(2))
-    # Loop over data dimensions and create text annotations.
     for i in range(2):
         for j in range(4):
             text = ax.text(j, i, "{:.2f}".format(to_plot[i][j]), ha="center", va="center", color="black")
@@ -168,7 +169,7 @@ def analyze_by_period(files, num_frames=60*30):
     time_person_spent_in_areas = {i:  time_person_spent_in_areas[i]/total_time_spent_in_room for i in range(8)}    
     return time_person_spent_in_areas
 
-def analyze():
+def analyze(files):
     total_frames = len(files)
     counter = 0
     analysis_results = {}
@@ -184,4 +185,3 @@ def analyze():
         analysis_results[start_time] = one_span_analysis
         counter += num_frames
     return analysis_results
-

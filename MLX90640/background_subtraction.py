@@ -3,12 +3,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 from numpy import array, column_stack
 from tqdm import tqdm
+import copy
 
 from config import bg_subtraction_gifs_path, bg_subtraction_pics_path
 from file_utils import (base_folder, create_folder_if_absent, get_all_files,
                         get_frame_GREY, normalize_frame)
 from godec import get_reshaped_frames, godec, plot_godec, set_data
 from visualizer import write_gif
+from kalman_filter import FrameKalmanFilter
 
 
 """
@@ -18,7 +20,10 @@ Background Subtraction with Godec
 def create_godec_input(files):
     i = 0
     for f in files:
-        frame = get_frame_GREY(f)
+        if type(f) == str:
+            frame = get_frame_GREY(f)
+        else:
+            frame = files[i]
         # Stack frames as column vectors
         F = frame.T.reshape(-1)
         
@@ -146,26 +151,38 @@ def compare_plot(images, subplt_titles, num_rows, num_columns, title="", debug=F
 Postprocessing Pipeline
 """
 
-def get_clean_frame(L_frame, S_frame):
-    if np.sum(L_frame) < np.sum(S_frame):
+def cleaned_godec_img(L_frame, S_frame):
+    if np.sum(np.log(L_frame)) < np.sum(np.log(S_frame)):
         return L_frame
     return S_frame
 
-def is_human_contour(cnt):
+def is_default_contour(cnt):
     return cv.contourArea(cnt) > 4 and cv.contourArea(cnt) < 12
 
-def postprocess_img(img):
+def postprocess_img(img, debug=True, contour_detect_filter=None):
     blurred_img = cv.medianBlur(img,5)
     _, thresholded_img = cv.threshold(blurred_img,127,255,cv.THRESH_BINARY)
     mask = thresholded_img.copy()
     contours, hierarchy = cv.findContours(mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-    color_img = cv.cvtColor(mask, cv.COLOR_GRAY2BGR)
-    selected_contours = [cnt for cnt in contours if is_human_contour(cnt)]
-    annotated_img = cv.drawContours(color_img, selected_contours, -1, (0,255,0), 1)
-    images = [img, blurred_img, thresholded_img, annotated_img]
+    
+    if contour_detect_filter: # allow users to input the size of the contour if the person is slightly bigger
+        selected_contours = [cnt for cnt in contours if contour_detect_filter(cnt)]
+    else:
+        selected_contours = [cnt for cnt in contours if is_default_contour(cnt)]
+    
     centroids = []
     if len(selected_contours) > 0:
         centroids = [get_centroid_from_contour(cnt) for cnt in selected_contours]
+    if not debug:
+        if contour_detect_filter:
+            return thresholded_img, centroids
+        else:
+            contour_areas = [cv.contourArea(cnt) for cnt in contours]
+            return contour_areas
+    
+    color_img = cv.cvtColor(mask, cv.COLOR_GRAY2BGR)
+    annotated_img = cv.drawContours(color_img, selected_contours, -1, (0,255,0), 1)
+    images = [img, blurred_img, thresholded_img, annotated_img]
     return images, centroids
 
 def get_centroid_from_contour(cnt):
@@ -175,7 +192,7 @@ def get_centroid_from_contour(cnt):
     return (cx,cy)
 
 
-def bg_subtraction(files, debug=False, save=False):
+def bs_pipeline(files, debug=False, save=False):
     """Background Subtraction Pipeline process
     1. perform godec background subtraction
     2. thresholding to make actual pixels representing the person to be more salient in the frame
@@ -187,16 +204,18 @@ def bg_subtraction(files, debug=False, save=False):
 
     Keyword Arguments:
         debug {bool} -- [description] (default: {False})
-    """    
+    """
+
     M, LS, L, S, width, height = bs_godec(files)
+    
     if debug:
         subplt_titles = ["Original", "After Godec", "Blurred", " Thresholded", "Annotated"]
         ims = init_comparison_plot(get_frame_GREY(files[0]), subplt_titles, 1, 5, title="Post Processing")
+        
         for i in tqdm(range(len(files))):
             L_frame = normalize_frame(L[:, i].reshape(width, height).T)
             S_frame = normalize_frame(S[:, i].reshape(width, height).T)
-            M_frame = normalize_frame(M[:, i].reshape(width, height).T)
-            img = get_clean_frame(L_frame, S_frame)
+            img = cleaned_godec_img(L_frame, S_frame)
             images, centriods = postprocess_img(img)
             images.insert(0, get_frame_GREY(files[i]))
             update_comparison_plot(ims, images, i, save)

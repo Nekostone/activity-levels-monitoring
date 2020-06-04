@@ -1,5 +1,5 @@
 import time
-from background_subtraction import (bg_subtraction, bs_godec, bs_godec_trained, postprocess_img, get_centroid_from_contour,
+from background_subtraction import (bs_pipeline, bs_godec, bs_godec_trained, postprocess_img, get_centroid_from_contour,
                               compare_gaussian_blur, compare_median_blur, init_comparison_plot, update_comparison_plot)
 from config import (bg_subtraction_gifs_path, bg_subtraction_pics_path, bs_pics_path,
                     bs_results_path, godec_data_path, godec_gifs_path,
@@ -80,8 +80,8 @@ def test_compare_median_blur(file):
 def test_compare_gaussian_blur(file):
     compare_gaussian_blur(get_frame_GREY(file))
 
-def test_background_subtraction(files, debug=False, save=False):
-    bg_subtraction(files, debug, save)
+def test_bs_pipeline(files, debug=False, save=False):
+    bs_pipeline(files, debug, save)
     
 def test_postprocess_img(f,  plot=False):
     img = get_frame_GREY(f)
@@ -91,13 +91,15 @@ def test_postprocess_img(f,  plot=False):
         subplt_titles = ["Original", "After Godec", "Blurred", " Thresholded", "Annotated"]
         ims = init_comparison_plot(img, subplt_titles, 1, 5, title="Post Processing")
         update_comparison_plot(ims, images, save=True, saveIndex=100)
-    
+
     print("Centroids found are located at: ", centroids)
+    thresholded_img = images[-2]
+    return thresholded_img, centroids
 
 """
 Initialization of test parameters
 """ 
-data_path = "data/teck_first_trial"
+data_path = "data/teck_calib"
 files = get_all_files(data_path)
     
 """
@@ -133,7 +135,7 @@ Test Postprocessing of Image
 Test Background Model
 """
 
-test_background_subtraction(files, debug=True, save=True)
+test_bs_pipeline(files, debug=True, save=True)
 pics = get_all_files(bg_subtraction_pics_path)
-gif_name = base_folder(data_path)+"2.gif"
-write_gif(pics, bg_subtraction_gifs_path+gif_name, start=0, end=len(pics), fps=15)
+gif_name = base_folder(data_path)+"6.gif"
+write_gif(pics, bg_subtraction_gifs_path+gif_name, start=0, end=len(pics), fps=3)
