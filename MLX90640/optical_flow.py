@@ -13,11 +13,7 @@ from naive_presence_detection import get_init_heatmap_plot
 from background_subtraction import bs_godec
 
 
-"""
-Optical Flow Algorithm
-"""
-
-def optical_flow_lk(files):
+def optical_flow_lk(files, track_length=10, detect_interval=5):
     print("Performing Lucas-Kanade Optical Flow")
     plot = get_init_heatmap_plot()
 
@@ -35,8 +31,6 @@ def optical_flow_lk(files):
     first_frame_gray = get_frame_GREY(files[0])
     prevPts = cv.goodFeaturesToTrack(first_frame_gray, mask = None, **feature_params)
     color = np.random.randint(0,255,(100,3))
-    # Create a mask image for drawing purposes
-    mask = np.zeros_like(first_frame_gray)
     counter = 1
     prevImg = first_frame_gray
     while counter < len(files):
@@ -44,7 +38,14 @@ def optical_flow_lk(files):
         nextImg = frame.copy()
         update_heatmap(get_frame(files[counter]), plot)
         nextPts, status, err = cv.calcOpticalFlowPyrLK(prevImg, nextImg, prevPts, None, **lk_params)
+        displacement = nextPts - prevPts
+        if (abs(displacement) > 3).any():
+            print(displacement)
+            plt.xlabel("Displacement: {}".format(displacement))
+        else:
+            plt.xlabel("Displacement in x/y lower than 3 ")
         if nextPts is None:
+            print("Target not moving")
             prevPts = cv.goodFeaturesToTrack(frame, mask = None, **feature_params)
             nextPts, status, err = cv.calcOpticalFlowPyrLK(prevImg, nextImg, prevPts, None, **lk_params)
      
@@ -53,17 +54,6 @@ def optical_flow_lk(files):
         good_new = nextPts[status==1]
         good_old = prevPts[status==1]
     
-        # annotate the tracks
-        for i,(new,old) in enumerate(zip(good_new, good_old)):
-            a,b = new.ravel()
-            c,d = old.ravel()
-            mask = cv.line(mask, (a,b),(c,d), color[i].tolist(), 2)
-            frame = cv.circle(frame,(a,b),5,color[i].tolist(),-1)
-        img = cv.add(frame,mask)
-        cv.imshow('frame',img)
-        k = cv.waitKey(30) & 0xff
-        if k == 27:
-            break
         # Now update the previous frame and previous points
         prevImg = nextImg.copy()
         prevPts = good_new.reshape(-1,1,2)

@@ -44,6 +44,9 @@ def init_heatmap(title="", frame_shape=(24,32), min_value=25, max_value=40, show
     plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
               rotation_mode="anchor")
     plt.colorbar()
+  else:
+    plt.xticks([])
+    plt.yticks([])
   fig.canvas.draw()
   return fig, ax, im
   
@@ -60,14 +63,6 @@ def update_heatmap(frame, plot):
   ax.draw_artist(ax.patch)
   im.figure.canvas.draw_idle()
   fig.canvas.flush_events()
-
-
-def draw_section_borders_8(ax):
-  # TODO: To programmatically annotate rectangles onto axis of the plot to show division of the grid into 8 areas 
-  for i in range(2):
-        for j in range(4):
-          lower_left_coords = (12*(i + 1)-1, 8*(j+1)-1)
-          rect = patches.Rectangle(lower_left_coords, width=2, height=1, linewidth=1, edgecolor='b', facecolor='none')
 
 def datetime_to_string(datetime):
   """convert a datetime object to formatted string

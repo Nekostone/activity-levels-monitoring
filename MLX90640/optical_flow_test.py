@@ -8,6 +8,6 @@ def test_opticalflow_lk():
 def test_opticalflow_dense():
     optical_flow_dense(files)
 
-data_path = "data/teck_first_trial"
+data_path = "data/teck_walk_out_and_in"
 files = get_all_files(data_path)
 test_opticalflow_lk()

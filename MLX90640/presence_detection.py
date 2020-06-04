@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import math
 from collections import defaultdict, Counter
 
@@ -16,7 +15,7 @@ from naive_presence_detection import divide_grid_into_areas
 def get_centroid_area_number(centroid):
     if centroid != None:
         x, y = centroid
-        return x // 8 + y // 12
+        return x // 8 + yt // 12
     return None
 
 def get_contour_area_history(files):
@@ -72,15 +71,3 @@ def analyze(files, num_calibration_frames=30):
         filename, file_extension = os.path.splitext(files[counter])
         initial_timestamp = filename
         centroid_locations, interpolated_centroid_history = get_centroid_area_history(files[counter:counter+num_frames], contour_detect_filter=)
-=======
-def detect_presence(files):
-    """
-    TODO:
-    - Centroid Tracking
-    - Background Modelling and image postprocessing Pipeline
-
-    Arguments:
-        files {[str]} -- result from get_all_files(data_path)
-    """
-    pass
->>>>>>> 686e55027e6a5e403e955452288d632e2d93032d
