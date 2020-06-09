@@ -11,6 +11,7 @@ from file_utils import (get_all_files, get_frame, get_frame_GREY,
                         get_frame_RGB, normalize_frame)
 from visualizer import init_heatmap, update_heatmap
 
+
 def get_init_heatmap_plot():
     array_shape = (24,32)
     min_value = 25

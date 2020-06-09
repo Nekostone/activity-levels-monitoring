@@ -1,5 +1,5 @@
-from optical_flow import optical_flow_dense, optical_flow_lk
 from file_utils import get_all_files
+from optical_flow import optical_flow_dense, optical_flow_lk
 
 
 def test_opticalflow_lk():

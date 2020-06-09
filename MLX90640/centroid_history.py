@@ -1,9 +1,10 @@
-from background_subtraction import postprocess_img
-import numpy as np
-from file_utils import get_frame, get_frame_GREY, get_all_files
 import copy
-import matplotlib.pyplot as plt
 
+import matplotlib.pyplot as plt
+import numpy as np
+
+from background_subtraction import postprocess_img
+from file_utils import get_all_files, get_frame, get_frame_GREY
 
 data = "data/teck_walk_out_and_in"
 files = get_all_files(data)

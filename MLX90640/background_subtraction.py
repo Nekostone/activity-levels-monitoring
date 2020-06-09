@@ -1,16 +1,17 @@
+import copy
+
 import cv2 as cv
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy import array, column_stack
 from tqdm import tqdm
-import copy
 
 from config import bg_subtraction_gifs_path, bg_subtraction_pics_path
 from file_utils import (base_folder, create_folder_if_absent, get_all_files,
                         get_frame_GREY, normalize_frame, get_frame)
 from godec import get_reshaped_frames, godec, plot_godec, set_data
-from visualizer import write_gif
 from kalman_filter import FrameKalmanFilter
+from visualizer import init_comparison_plot, update_comparison_plot, write_gif
 
 
 """
@@ -115,36 +116,6 @@ def compare_thresholds(original_img, cleaned_img):
     subplt_titles = ['Original Image', 'After Godec', 'Median Blur of 5', 'Global Thresholding (v = 127)',
         'Adaptive Mean Thresholding', 'Adaptive Gaussian Thresholding']
 
-def init_comparison_plot(frame, subplt_titles, num_rows, num_columns, title=""):
-    fig, axs = plt.subplots(num_rows, num_columns)
-    fig.suptitle(title)
-    ims = []
-    
-    if num_rows <= 1:
-        for i in range(num_columns):
-            axs[i].set_title(subplt_titles[i])
-            im = axs[i].imshow(frame, cmap='hot')
-            ims.append(im)
-            plt.xticks([]),plt.yticks([])
-    else:
-        counter = 0
-        for i in range(num_rows):
-            for j in range(num_columns):
-                if len(subplt_titles) < counter:
-                    axs[i,j].set_title(subplt_titles[counter])
-                    im = axs[i][j].imshow(frame, 'gray')
-                    ims.append(im)
-                    counter +=1
-    return ims    
-
-def update_comparison_plot(ims, images, saveIndex=None, save=False):
-    for i in range(len(ims)):
-        ims[i].set_data(images[i])
-    plt.draw()
-    if save:
-        create_folder_if_absent(bg_subtraction_pics_path)
-        pic_name = '{}{}.png'.format(bg_subtraction_pics_path, saveIndex)
-        plt.savefig(pic_name)
 
 def compare_plot(images, subplt_titles, num_rows, num_columns, title="", debug=False):
     fig, axs = plt.subplots(num_rows, num_columns)

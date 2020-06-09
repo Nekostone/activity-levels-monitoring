@@ -6,11 +6,11 @@ import cv2 as cv
 import matplotlib.pyplot as plt
 import numpy as np
 
+from background_subtraction import bs_godec
 from file_utils import (get_all_files, get_frame, get_frame_GREY,
                         get_frame_RGB, normalize_frame)
-from visualizer import init_heatmap, update_heatmap
 from naive_presence_detection import get_init_heatmap_plot
-from background_subtraction import bs_godec
+from visualizer import init_heatmap, update_heatmap
 
 
 def optical_flow_lk(files, track_length=10, detect_interval=5):
