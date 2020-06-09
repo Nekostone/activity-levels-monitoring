@@ -8,7 +8,8 @@ from tqdm import tqdm
 
 from config import bg_subtraction_gifs_path, bg_subtraction_pics_path
 from file_utils import (base_folder, create_folder_if_absent, get_all_files,
-                        get_frame_GREY, normalize_frame)
+                        get_frame, get_frame_GREY, normalize_frame)
+from foreground_probability import foreground_probability
 from godec import get_reshaped_frames, godec, plot_godec, set_data
 from kalman_filter import FrameKalmanFilter
 from visualizer import init_comparison_plot, update_comparison_plot, write_gif
@@ -18,11 +19,15 @@ from visualizer import init_comparison_plot, update_comparison_plot, write_gif
 Background Subtraction with Godec
 """
 
-def create_godec_input(files):
+
+def create_godec_input(files, normalize=True):
     i = 0
     for f in files:
         if type(f) == str:
-            frame = get_frame_GREY(f)
+            if normalize:
+                frame = get_frame_GREY(f)
+            else:
+                frame = get_frame(f)
         else:
             frame = files[i]
         # Stack frames as column vectors
@@ -35,8 +40,8 @@ def create_godec_input(files):
         i+=1
     return M, frame
 
-def bs_godec(files, debug=False, gif_name=False):
-    M , frame = create_godec_input(files)
+def bs_godec(files, debug=False, gif_name=False, normalize=True):
+    M , frame = create_godec_input(files, normalize)
     L, S, LS, RMSE = godec(M, iterated_power=5)
     height, width = frame.shape
     return M, LS, L, S, width, height
@@ -122,10 +127,16 @@ def compare_plot(images, subplt_titles, num_rows, num_columns, title="", debug=F
 Postprocessing Pipeline
 """
 
-def cleaned_godec_img(L_frame, S_frame):
-    if np.sum(np.log(L_frame)) < np.sum(np.log(S_frame)):
-        return L_frame
-    return S_frame
+def cleaned_godec_img(L_frame, S_frame, orig_frame):
+    L_probability = foreground_probability(L_frame, orig_frame)
+    S_probability = foreground_probability(S_frame, orig_frame)
+    if np.sum(L_probability) < np.sum(S_probability):
+        probability = L_probability
+        img = L_frame
+    else:
+        probability = S_probability
+        img = S_frame
+    return img, probability
 
 def is_default_contour(cnt):
     return cv.contourArea(cnt) > 4 and cv.contourArea(cnt) < 12
@@ -186,7 +197,8 @@ def bs_pipeline(files, debug=False, save=False):
         for i in tqdm(range(len(files))):
             L_frame = normalize_frame(L[:, i].reshape(width, height).T)
             S_frame = normalize_frame(S[:, i].reshape(width, height).T)
-            img = cleaned_godec_img(L_frame, S_frame)
+            img, probability = cleaned_godec_img(L_frame, S_frame, get_frame(files[i]))
             images, centriods = postprocess_img(img)
             images.insert(0, get_frame_GREY(files[i]))
-            update_comparison_plot(ims, images, i, save)
+            update_comparison_plot(ims, images)
+            plt.savefig(bg_subtraction_pics_path+"{}.png".format(i))

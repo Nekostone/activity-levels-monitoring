@@ -15,8 +15,8 @@ class PixelKalmanFilter:
         self.H = np.matrix([1, 0])  # H matrix
 
         # Covariance matrices
-        self.Q = np.array([[0.05, 0], [0, 0.01]])  # process noise covariance
-        self.R = 2  # measurement noise covariance
+        self.Q = np.array([[0.1, 0], [0, 0.1]])  # process noise covariance
+        self.R = 1.5  # measurement noise covariance
         self.P = np.array([[1, 0], [0, 1]])  # estimation covariance, init to identity matrix
 
         # System State
