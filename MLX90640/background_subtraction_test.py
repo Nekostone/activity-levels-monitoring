@@ -141,7 +141,7 @@ Test Postprocessing of Image
 Test Background Model
 """
 
-# test_bs_pipeline(files, debug=True, save=True)
+test_bs_pipeline(files, debug=True, save=True)
 # pics = get_all_files(bg_subtraction_pics_path)
 # gif_name = base_folder(data_path)+"6.gif"
 # write_gif(pics, bg_subtraction_gifs_path+gif_name, start=0, end=len(pics), fps=3)
