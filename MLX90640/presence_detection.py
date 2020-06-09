@@ -1,10 +1,11 @@
 import math
-from collections import defaultdict, Counter
+import os
+from collections import Counter, defaultdict
 
 import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
-import os
+
 from background_subtraction import bs_godec, cleaned_godec_img, postprocess_img
 from centroid_history import Interpolator, append_centroid_history
 from file_utils import (basename, create_folder_if_absent, get_all_files,
@@ -15,19 +16,10 @@ from naive_presence_detection import divide_grid_into_areas
 def get_centroid_area_number(centroid):
     if centroid != None:
         x, y = centroid
-        return x // 8 + yt // 12
+        return x // 8 + y // 12
     return None
 
-def get_contour_area_history(files):
-        centroid_history = []
-        M, LS, L, S, width, height = bs_godec(files)
-        for i in tqdm(range(len(files))):
-            img = get_frame_GREY(files[i])
-            L_frame = normalize_frame(L[:, i].reshape(width, height).T)
-            S_frame = normalize_frame(S[:, i].reshape(width, height).T)
-            img = cleaned_godec_img(L_frame, S_frame)
-
-def get_centroid_area_history(files, contour_detect_filter):
+def get_centroid_area_history(files, contour_detect_filter=None):
     """
     -  Centroid Tracking
     - Background Subtraction Pipeline
@@ -70,4 +62,4 @@ def analyze(files, num_calibration_frames=30):
             num_frames = total_frames - counter
         filename, file_extension = os.path.splitext(files[counter])
         initial_timestamp = filename
-        centroid_locations, interpolated_centroid_history = get_centroid_area_history(files[counter:counter+num_frames], contour_detect_filter=)
+        centroid_locations, interpolated_centroid_history = get_centroid_area_history(files[counter:counter+num_frames], contour_detect_filter=None)

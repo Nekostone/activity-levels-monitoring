@@ -18,4 +18,4 @@ def test_get_centroid_history(plot=False):
         plot_centroid_history(interp.history)
 
     
-test_get_centroid_history(plot=True)
+# test_get_centroid_history(plot=True)

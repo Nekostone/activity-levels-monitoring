@@ -64,6 +64,54 @@ def update_heatmap(frame, plot):
   im.figure.canvas.draw_idle()
   fig.canvas.flush_events()
 
+def init_comparison_plot(frame, subplt_titles, num_rows, num_columns, title=""):
+    """General function for initializing an empty comparison plot involving more than 1 subplot.
+
+    Args:
+        frame (array): obtained from get_frame(file) or get_frame_GREY(file)
+        subplt_titles ([str]): array of subplot titles
+        num_rows (int): Number of rows
+        num_columns (int): Number of columns
+        title (str, optional): Title. Defaults to "".
+
+    Returns:
+        ims: subplot handlers to be passed to update_comparison_plot()
+    """
+    fig, axs = plt.subplots(num_rows, num_columns)
+    fig.suptitle(title)
+    ims = []
+    
+    if num_rows <= 1:
+        for i in range(num_columns):
+            axs[i].set_title(subplt_titles[i])
+            im = axs[i].imshow(frame, cmap='hot')
+            ims.append(im)
+            axs[i].set_xticks([])
+            axs[i].set_yticks([])
+    else:
+        counter = 0
+        for i in range(num_rows):
+            for j in range(num_columns):
+                axs[i][j].set_title(subplt_titles[counter])
+                im = axs[i][j].imshow(frame, cmap='hot')
+                axs[i][j].set_xticks([])
+                axs[i][j].set_yticks([])
+                ims.append(im)
+                counter +=1
+    return ims    
+
+def update_comparison_plot(ims, images):
+    """To be used for updating the comparison plot in every iteration
+
+    Args:
+        ims: obtained from init_comparison_plot()
+        images ([np.array]): frames obtained from e.g. post_process_img(img)
+        save (bool, optional): Defaults to False.
+    """
+    for i in range(len(ims)):
+        ims[i].set_data(images[i])
+    plt.draw()
+
 def datetime_to_string(datetime):
   """convert a datetime object to formatted string
 
@@ -74,6 +122,7 @@ def datetime_to_string(datetime):
       [string] -- formatted datetime string
   """
   return "/".join([str(datetime.day), str(datetime.month), str(datetime.year)])
+
 
 def time_series_plot_from_json(time_series_dict, single_day=False, save=False):
   """Given a time series dictionary, plot the trend in likelihood
@@ -129,6 +178,8 @@ def time_series_plot_from_json(time_series_dict, single_day=False, save=False):
   if save:
     plt.savefig("./time_series_plt.png")
   plt.show()
+  
+
 
 """
 ===========================================

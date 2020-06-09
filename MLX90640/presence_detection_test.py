@@ -1,7 +1,9 @@
-from presence_detection import get_centroid_area_number, get_centroid_area_history
 from background_subtraction_test import test_postprocess_img
 from centroid_history import plot_centroid_history
 from file_utils import get_all_files
+from presence_detection import (get_centroid_area_history,
+                                get_centroid_area_number)
+
 
 def test_get_centroid_area_number():
     centroid = (0,0)

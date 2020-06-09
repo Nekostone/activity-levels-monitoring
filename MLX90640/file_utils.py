@@ -2,11 +2,12 @@ import csv
 import json
 import time
 from os import listdir, makedirs
-from os.path import dirname, exists, getsize, isfile, join, basename
+from os.path import basename, dirname, exists, getsize, isfile, join
 
 import cv2 as cv
 import numpy as np
 from pygifsicle import optimize
+
 
 def save_npy(df, data_path, name=None, directory_sort=None):
   file = name or time.strftime("%Y.%m.%d_%H%M%S",time.localtime(time.time()))

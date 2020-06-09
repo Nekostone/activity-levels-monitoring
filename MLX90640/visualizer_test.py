@@ -1,9 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from file_utils import get_all_files, get_frame, create_folder_if_absent
-from visualizer import (create_folder_if_absent, init_heatmap, update_heatmap,
-                        write_gif_from_npy)
+from file_utils import create_folder_if_absent, get_all_files, get_frame
+from visualizer import init_heatmap, update_heatmap, write_gif_from_npy
 
 
 """

@@ -1,6 +1,8 @@
-import cv2 as cv
 import sys
 import time
+
+import cv2 as cv
+
 from file_utils import get_all_files, get_frame_GREY
 
 tracker_types = ['BOOSTING', 'MIL','KCF', 'TLD', 'MEDIANFLOW', 'GOTURN', 'CSRT']
