@@ -11,7 +11,7 @@ from visualizer import write_gif
 
 kalman_pics_path = "kalman_filter_pics/"
 kalman_gifs_path = "kalman_filter_gifs/"
-data_path = "data/teck_walk_out_and_in"
+data_path = "data/teck_calib_2"
 data = get_all_files(data_path)
 
 def test_pixel_filter():

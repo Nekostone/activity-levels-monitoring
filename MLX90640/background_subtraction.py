@@ -7,7 +7,7 @@ import copy
 
 from config import bg_subtraction_gifs_path, bg_subtraction_pics_path
 from file_utils import (base_folder, create_folder_if_absent, get_all_files,
-                        get_frame_GREY, normalize_frame)
+                        get_frame_GREY, normalize_frame, get_frame)
 from godec import get_reshaped_frames, godec, plot_godec, set_data
 from visualizer import write_gif
 from kalman_filter import FrameKalmanFilter
@@ -17,11 +17,15 @@ from kalman_filter import FrameKalmanFilter
 Background Subtraction with Godec
 """
 
-def create_godec_input(files):
+
+def create_godec_input(files, normalize=True):
     i = 0
     for f in files:
         if type(f) == str:
-            frame = get_frame_GREY(f)
+            if normalize:
+                frame = get_frame_GREY(f)
+            else:
+                frame = get_frame(f)
         else:
             frame = files[i]
         # Stack frames as column vectors
@@ -34,8 +38,8 @@ def create_godec_input(files):
         i+=1
     return M, frame
 
-def bs_godec(files, debug=False, gif_name=False):
-    M , frame = create_godec_input(files)
+def bs_godec(files, debug=False, gif_name=False, normalize=True):
+    M , frame = create_godec_input(files, normalize)
     L, S, LS, RMSE = godec(M, iterated_power=5)
     height, width = frame.shape
     return M, LS, L, S, width, height
