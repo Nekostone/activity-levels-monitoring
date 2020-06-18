@@ -29,7 +29,7 @@ def test_foreground_probability(savegif=False):
         
         # this condition is now abstracted as the function cleaned_godec_img() in background_subtractio.py
         S_probability = foreground_probability(S_frame, frame)
-        if np.sum(L_probability) < np.sum(S_probability):
+        if np.amax(L_probability) > np.amax(S_probability):
             probability = L_probability
             img = L_frame
         else:

@@ -19,7 +19,7 @@ def get_centroid_area_number(centroid):
         return x // 8 + y // 12
     return None
 
-def get_centroid_area_history(files, contour_detect_filter=None):
+def get_centroid_area_history(files):
     """
     -  Centroid Tracking
     - Background Subtraction Pipeline
@@ -28,8 +28,6 @@ def get_centroid_area_history(files, contour_detect_filter=None):
     Arguments:
         files {[str]} -- up to 30 mins of files, since we decided that recalibration of godec should be done every 30 mins
     """
-    assert contour_detect_filter != None
-    
     centroid_history = []
     M, LS, L, S, width, height = bs_godec(files)
     for i in tqdm(range(len(files))):
@@ -37,7 +35,7 @@ def get_centroid_area_history(files, contour_detect_filter=None):
         L_frame = normalize_frame(L[:, i].reshape(width, height).T)
         S_frame = normalize_frame(S[:, i].reshape(width, height).T)
         img = cleaned_godec_img(L_frame, S_frame)
-        thresholded_img, centroids = postprocess_img(img, debug=False, contour_detect_filter=contour_detect_filter)
+        thresholded_img, centroids = postprocess_img(img)
         append_centroid_history(centroids, i, centroid_history)
     
     interpolated_centroid_history = Interpolator(centroid_history).history
@@ -62,4 +60,4 @@ def analyze(files, num_calibration_frames=30):
             num_frames = total_frames - counter
         filename, file_extension = os.path.splitext(files[counter])
         initial_timestamp = filename
-        centroid_locations, interpolated_centroid_history = get_centroid_area_history(files[counter:counter+num_frames], contour_detect_filter=None)
+        centroid_locations, interpolated_centroid_history = get_centroid_area_history(files[counter:counter+num_frames])
