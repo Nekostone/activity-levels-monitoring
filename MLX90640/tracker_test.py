@@ -25,6 +25,7 @@ if tracker_type == "CSRT":
 
 
 data_path = "testpics"
+
 files = get_all_files(data_path)
 frame = cv.imread(files[0])
 print('shape={}'.format(frame.shape))

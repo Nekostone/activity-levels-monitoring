@@ -172,4 +172,5 @@ Test Background Model
 # pics = get_all_files(bg_subtraction_pics_path)
 # gif_name = base_folder(data_path)+"6.gif"
 # write_gif(pics, bg_subtraction_gifs_path+gif_name, start=0, end=len(pics), fps=3)
-test_cleaned_godec_img()
+
+# test_cleaned_godec_img()

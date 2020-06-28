@@ -136,7 +136,7 @@ def get_godec_frame(M, L, S, width, height, i):
     img, probability = cleaned_godec_img(L_frame, S_frame, M_frame)
     return img, probability
 
-def cleaned_godec_img(L_frame, S_frame, orig_frame):
+def cleaned_godec_img(L_frame, S_frame, orig_frame, output_probability=False):
     L_probability = foreground_probability(L_frame, orig_frame)
     S_probability = foreground_probability(S_frame, orig_frame)
     if np.amax(L_probability) < np.amax(S_probability):
@@ -145,27 +145,35 @@ def cleaned_godec_img(L_frame, S_frame, orig_frame):
     else:
         probability = S_probability
         img = S_frame
-    return img, probability
+    
+    if output_probability:
+        return img, probability
+    return img
 
 def is_default_contour(cnt):
-    return cv.contourArea(cnt) > 4 and cv.contourArea(cnt) < 12
+    return cv.contourArea(cnt) > 0
 
-def postprocess_img(img, threshold_img_only=False):
+def draw_contours_on_threshold_img(img, contours, color=(0,255,0)):
+    mask = img.copy()
+    color_img = cv.cvtColor(mask, cv.COLOR_GRAY2BGR)
+    return cv.drawContours(color_img, contours, -1, color, 1)
+
+def postprocess_img(img, all_images=True, output_contours=False):
     blurred_img = cv.medianBlur(img,5)
     _, thresholded_img = cv.threshold(blurred_img,127,255,cv.THRESH_BINARY)
-    mask = thresholded_img.copy()
-    contours, hierarchy = cv.findContours(mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+    contours, hierarchy = cv.findContours(thresholded_img, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
     
     selected_contours = [cnt for cnt in contours if is_default_contour(cnt)]
     
-    centroids = []  
-    if len(selected_contours) > 0:
+    centroids = []
+    if len(selected_contours) >= 1:
         centroids = [get_centroid_from_contour(cnt) for cnt in selected_contours]
     
-    color_img = cv.cvtColor(mask, cv.COLOR_GRAY2BGR)
-    annotated_img = cv.drawContours(color_img, selected_contours, -1, (0,255,0), 1)
+    annotated_img = draw_contours_on_threshold_img(thresholded_img, contours)
     images = [img, blurred_img, thresholded_img, annotated_img]
-    if threshold_img_only:
+    if not all_images:
+        if output_contours:
+            return thresholded_img, selected_contours, centroids
         return thresholded_img, centroids
     return images, centroids
 
@@ -199,7 +207,7 @@ def bs_pipeline(files, debug=False, save=False):
         for i in tqdm(range(len(files))):
             L_frame = normalize_frame(L[:, i].reshape(width, height).T)
             S_frame = normalize_frame(S[:, i].reshape(width, height).T)
-            img, probability = cleaned_godec_img(L_frame, S_frame, get_frame(files[i]))
+            img = cleaned_godec_img(L_frame, S_frame, get_frame(files[i]))
             images, centriods = postprocess_img(img)
             images.insert(0, get_frame_GREY(files[i]))
             update_comparison_plot(ims, images)
