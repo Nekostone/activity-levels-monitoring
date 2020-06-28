@@ -35,7 +35,7 @@ Activity Level Analysis (from Review 2)
 
 Review 3
 
-[coming soon!]
+<img src="screenshots/bs_pipeline.gif">
 
 
 ## Setup instructions for this repo

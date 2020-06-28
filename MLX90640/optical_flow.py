@@ -69,7 +69,7 @@ def optical_flow_dense(files):
     
     # frames to be compared is after godec and postprocessing
     godec_frame, probability = get_godec_frame(M, L, S, width, height, 0)
-    img, centroids = postprocess_img(godec_frame, threshold_img_only=True)
+    img, centroids = postprocess_img(godec_frame, all_images=False)
     prev_gray = img
     ims = init_comparison_plot(first_frame, ["Original", "Thresholded", "FlowS"], 1,3)
     test = cv.cvtColor(first_frame.astype("uint8"), cv.COLOR_GRAY2BGR)
@@ -82,7 +82,7 @@ def optical_flow_dense(files):
     while counter < len(files):
         print(counter)
         godec_frame, probability = get_godec_frame(M, L, S, width, height, counter)
-        img, centroids = postprocess_img(godec_frame, threshold_img_only=True)
+        img, centroids = postprocess_img(godec_frame, all_images=False)
         next_gray = img
         flow = cv.calcOpticalFlowFarneback(prev_gray,next_gray, 
                                            None, 
