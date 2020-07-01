@@ -12,6 +12,7 @@ mccabe==0.6.1
 more-itertools==8.2.0
 nptyping==0.3.1
 numpy==1.18.1
+opencv-python==4.2.0.34
 packaging==20.1
 Pillow==7.1.2
 pkg-resources==0.0.0
