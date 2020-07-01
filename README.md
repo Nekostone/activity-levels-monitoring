@@ -8,6 +8,7 @@
 **Table of Contents**
 - [Introduction to the Project](#introduction-to-the-project)
 - [Progress](#progress)
+- [Setup instructions for this repo](#setup-instructions-for-this-repo)
 
 ## Introduction to the Project
 
