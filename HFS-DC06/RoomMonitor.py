@@ -38,13 +38,13 @@ class RoomMonitor(StateMachine):
     liv2out    = living.to(out)
     out2liv    = out.to(living)
     
-    # liv2x = liv2bed | liv2toilet | liv2kitch | liv2out
+    liv2x = liv2bed | liv2toilet | liv2kitch | liv2out
     
-    # def get_all_transitions(self):
-    #     return [t.identifier for t in self.transitions]
+    def get_all_transitions(self):
+        return [t.identifier for t in self.transitions]
 
-    # def get_all_states(self):
-    #     return [s.identifier for s in self.states]
+    def get_all_states(self):
+        return [s.identifier for s in self.states]
     
-    # def on_liv2x(self):
-    #     print("leaving the living room, going to ", self.current_state.name)
+    def on_liv2x(self):
+        print("leaving the living room, going to ", self.current_state.name)
