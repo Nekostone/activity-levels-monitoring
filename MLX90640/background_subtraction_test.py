@@ -7,6 +7,7 @@ from background_subtraction import (bs_godec, bs_godec_trained, bs_pipeline,
 from config import (bg_subtraction_gifs_path, bg_subtraction_pics_path,
                     bs_pics_path, bs_results_path, godec_data_path,
                     godec_gifs_path, godec_pics_path)
+
 from file_utils import (base_folder, create_folder_if_absent, get_all_files,
                         get_frame, get_frame_GREY, normalize_frame, save_npy)
 from godec import plot_bs_results, plot_godec
@@ -123,6 +124,7 @@ def test_postprocess_img(f,  plot=False):
         images.insert(0, img)
         subplt_titles = ["Original", "After Godec", "Blurred", " Thresholded", "Annotated"]
         ims = init_comparison_plot(img, subplt_titles, 1, 5, title="Post Processing")
+
         update_comparison_plot(ims, images)
 
     print("Centroids found are located at: ", centroids)
@@ -132,6 +134,7 @@ def test_postprocess_img(f,  plot=False):
 """
 Initialization of test parameters
 """ 
+
 data_path = "data/teck_calib_2"
 files = get_all_files(data_path)
     

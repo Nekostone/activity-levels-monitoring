@@ -5,7 +5,6 @@ from collections import Counter, defaultdict
 import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
-
 from background_subtraction import bs_godec, cleaned_godec_img, postprocess_img
 from centroid_history import Interpolator, append_centroid_history
 from file_utils import (basename, create_folder_if_absent, get_all_files,

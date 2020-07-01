@@ -37,7 +37,6 @@ Review 3
 
 <img src="screenshots/bs_pipeline.gif">
 
-
 ## Setup instructions for this repo
 
 Refer [here](SETUP.md)
