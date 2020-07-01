@@ -1,12 +1,40 @@
-from background_subtraction import postprocess_img
-import numpy as np
-from file_utils import get_frame, get_frame_GREY, get_all_files
 import copy
+import math
+import os
+from collections import Counter, defaultdict
+
 import matplotlib.pyplot as plt
+import numpy as np
+from tqdm import tqdm
+
+from background_subtraction import (bs_godec, cleaned_godec_img,
+                                    postprocess_img)
+from file_utils import (basename, create_folder_if_absent, get_all_files,
+                        get_frame, get_frame_GREY, normalize_frame)
 
 
-data = "data/teck_walk_out_and_in"
-files = get_all_files(data)
+def input_target_centroid_area():
+    centroid_area = input("Please input which area the target is (0-7):")
+    
+    print("The selected target is in area " + centroid_area)
+    return centroid_area
+
+
+def get_centroid_area_number(centroid):
+    if centroid != None:
+        x, y = centroid
+        return x // 8 + y // 12
+    return None
+
+def get_centroid_history(files):
+    centroid_history = []
+    contour_history = []
+    for i in range(len(files)):
+        img = get_frame_GREY(files[i])
+        images, centroids = postprocess_img(img)
+        append_centroid_history(centroids, i, centroid_history)
+        
+    return np.array(centroid_history)
 
 def append_centroid_history(centroids, i, centroid_history):
     if len(centroids) == 1:
@@ -14,7 +42,11 @@ def append_centroid_history(centroids, i, centroid_history):
         return
         
     if i == 0:
-        centroid_history.append(centroids[0])  # pick the first centroid of the first frame. Not the most accurate but yolo
+        if len(centroids) >= 1:
+            centroid_history.append(centroids[0])  # pick the first centroid of the first frame. Not the most accurate but yolo
+        else:
+            centroid_history.append(None)
+
     else:
         prev_centroid = centroid_history[i - 1]
         if len(centroids) > 1:
@@ -33,16 +65,6 @@ def append_centroid_history(centroids, i, centroid_history):
                 centroid_history.append(centroids[0])
         else:
             centroid_history.append(None)
-
-def get_centroid_history(files):
-    centroid_history = []
-    for i in range(len(files)):
-        img = get_frame_GREY(files[i])
-        images, centroids = postprocess_img(img)
-        append_centroid_history(centroids, i, centroid_history)
-
-    return np.array(centroid_history)
-
 
 class Interpolator:
     def __init__(self, history):
@@ -77,7 +99,7 @@ class Interpolator:
 
                 self.none_block = []
                 
-def plot_centroid_history(interp_history):
+def plot_centroid_history_hexbin(interp_history):
     x = [x[0] for x in interp_history if x!= None]
     y = [32-x[1] for x in interp_history if x!= None]
     xmin = min(x)
@@ -101,3 +123,43 @@ def plot_centroid_history(interp_history):
     cb.set_label('log10(N)')
 
     plt.show()
+
+
+def get_centroid_area_history(files):
+    """
+    -  Centroid Tracking
+    - Background Subtraction Pipeline
+    - Return something for analysis
+
+    Arguments:
+        files {[str]} -- up to 30 mins of files, since we decided that recalibration of godec should be done every 30 mins
+    """
+    annotated_images = []
+    centroid_history = []
+    M, LS, L, S, width, height = bs_godec(files)
+    
+    for i in range(len(files)):
+        img = get_frame_GREY(files[i])
+        L_frame = normalize_frame(L[:, i].reshape(width, height).T)
+        S_frame = normalize_frame(S[:, i].reshape(width, height).T)
+        img = cleaned_godec_img(L_frame, S_frame, get_frame(files[i]))
+        images, centroids = postprocess_img(img)
+        
+        annotated_img = images[-1]
+        annotated_images.append(annotated_img)
+        
+        append_centroid_history(centroids, i, centroid_history)
+    
+    interpolated_centroid_history = Interpolator(centroid_history).history
+    centroid_area_numbers = [get_centroid_area_number(cnt) for cnt in interpolated_centroid_history]
+    area_counter = Counter(centroid_area_numbers)
+    area_movement_counter = Counter()
+    
+    for i in range(8):
+        if i not in area_counter:
+            area_counter[i] = 0
+    for i in range(len(centroid_area_numbers) - 1):
+        label = str(centroid_area_numbers[i])+"→"+str(centroid_area_numbers[i+1])
+        area_movement_counter[label] += 1
+        
+    return area_counter, area_movement_counter, centroid_area_numbers, annotated_images

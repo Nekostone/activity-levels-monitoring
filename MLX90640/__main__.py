@@ -85,7 +85,6 @@ def save_serial_output(forever, num_samples=3000, mode=DEBUG_MODE):
             array = np.array(values)    
             if array.shape[0] == ARRAY_SHAPE[0] * ARRAY_SHAPE[1]:
                 df = np.reshape(array.astype(float), ARRAY_SHAPE)
-                # nan_value_indices = get_nan_value_indices(df)
                 df = interpolate_values(df)
                 max_temp = np.amax(df)
                 min_temp = np.amin(df)

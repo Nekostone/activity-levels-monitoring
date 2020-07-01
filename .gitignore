@@ -76,12 +76,8 @@ bs_data
 bg_model_gifs
 bg_model_pics
 bg_subtract_pics
-
-
-
-
-
-
 bg_subtract_gifs
 kalman_filter_gifs
 kalman_filter_pics
+testpics
+optical_flow

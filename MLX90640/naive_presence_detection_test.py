@@ -1,11 +1,13 @@
-import matplotlib.pyplot as plt
-
+from presence_detection import get_centroid_area_number, get_centroid_area_history
+from background_subtraction_test import test_postprocess_img
+from centroid_history import plot_centroid_history
 from file_utils import get_all_files
-from naive_presence_detection import (get_frame, naive_binary_likelihood_by_frame,
-                                naive_detection_by_frame,
-                                naive_detection_from_files,
-                                optical_flow_dense, optical_flow_lk,
-                                visualize_likelihood_plot)
+from naive_presence_detection import (get_frame,
+                                      naive_binary_likelihood_by_frame,
+                                      naive_detection_by_frame,
+                                      naive_detection_from_files,
+                                      optical_flow_dense, optical_flow_lk,
+                                      visualize_likelihood_plot)
 
 data_path = "./data/teck_walk_out_and_in" # dirty data with movement
 # data_path = "./data/sw_second_trial" # very dirty data with no movement

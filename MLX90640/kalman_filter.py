@@ -1,10 +1,12 @@
 #! usr/bin/env/python
-from file_utils import get_all_files
-from file_utils import get_frame, get_frame_GREY
-from tqdm import tqdm
-import numpy as np
-import matplotlib.pyplot as plt
 import copy
+
+import matplotlib.pyplot as plt
+import numpy as np
+from tqdm import tqdm
+
+from file_utils import get_all_files, get_frame, get_frame_GREY
+
 
 class PixelKalmanFilter:
     def __init__(self):
@@ -13,8 +15,8 @@ class PixelKalmanFilter:
         self.H = np.matrix([1, 0])  # H matrix
 
         # Covariance matrices
-        self.Q = np.array([[0.05, 0], [0, 0.01]])  # process noise covariance
-        self.R = 2  # measurement noise covariance
+        self.Q = np.array([[0.1, 0], [0, 0.1]])  # process noise covariance
+        self.R = 1.5  # measurement noise covariance
         self.P = np.array([[1, 0], [0, 1]])  # estimation covariance, init to identity matrix
 
         # System State
@@ -52,7 +54,7 @@ class FrameKalmanFilter:
                 frame_out[row][col] = pixel_filter.filter(frame_in[row][col])
 
         return frame_out
-
+    
 def init_noise_reduction_plot(frame, subplt_titles):
     num_rows = 1
     num_columns = 2

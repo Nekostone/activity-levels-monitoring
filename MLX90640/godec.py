@@ -80,7 +80,6 @@ def godec(M, rank=1, card=None, iterated_power=1, max_iter=100, tol=0.001):
         error = sqrt(mean_squared_error(M, LS))
         RMSE.append(error)
         
-        print("iter: ", iter, "error: ", error)
         if (error <= tol) or (iter >= max_iter):
             break
         else:

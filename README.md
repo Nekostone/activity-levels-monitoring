@@ -1,10 +1,13 @@
-<div style="text-align:center;">
+<div align="center">
     <img width=300 src="./screenshots/catstone.png">
-    <h1>Nekostone</h1>
     <p><i>Silently guarding your loved ones</i></p>
 </div>
 
 ---
+
+**Table of Contents**
+- [Introduction to the Project](#introduction-to-the-project)
+- [Progress](#progress)
 
 ## Introduction to the Project
 
@@ -31,9 +34,8 @@ Activity Level Analysis (from Review 2)
 
 Review 3
 
-[coming soon!]
+<img src="screenshots/bs_pipeline.gif">
 
 
-## Setup instructions for this repo
 
 Refer [here](SETUP.md)

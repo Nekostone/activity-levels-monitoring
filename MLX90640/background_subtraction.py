@@ -1,27 +1,35 @@
+import copy
+
 import cv2 as cv
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy import array, column_stack
 from tqdm import tqdm
-import copy
 
 from config import bg_subtraction_gifs_path, bg_subtraction_pics_path
 from file_utils import (base_folder, create_folder_if_absent, get_all_files,
-                        get_frame_GREY, normalize_frame)
+                        get_frame, get_frame_GREY, get_frame_RGB, normalize_frame)
+from foreground_probability import foreground_probability
 from godec import get_reshaped_frames, godec, plot_godec, set_data
-from visualizer import write_gif
 from kalman_filter import FrameKalmanFilter
+from visualizer import init_comparison_plot, update_comparison_plot, write_gif
 
 
 """
 Background Subtraction with Godec
 """
 
-def create_godec_input(files):
+
+def create_godec_input(files, normalize=True, rgb=False):
     i = 0
     for f in files:
         if type(f) == str:
-            frame = get_frame_GREY(f)
+            if rgb:
+                frame = get_frame_RGB(f)
+            elif normalize:
+                frame = get_frame_GREY(f)
+            else:
+                frame = get_frame(f)
         else:
             frame = files[i]
         # Stack frames as column vectors
@@ -34,8 +42,8 @@ def create_godec_input(files):
         i+=1
     return M, frame
 
-def bs_godec(files, debug=False, gif_name=False):
-    M , frame = create_godec_input(files)
+def bs_godec(files, debug=False, gif_name=False, normalize=True, rgb=False):
+    M , frame = create_godec_input(files, normalize, rgb)
     L, S, LS, RMSE = godec(M, iterated_power=5)
     height, width = frame.shape
     return M, LS, L, S, width, height
@@ -111,36 +119,6 @@ def compare_thresholds(original_img, cleaned_img):
     subplt_titles = ['Original Image', 'After Godec', 'Median Blur of 5', 'Global Thresholding (v = 127)',
         'Adaptive Mean Thresholding', 'Adaptive Gaussian Thresholding']
 
-def init_comparison_plot(frame, subplt_titles, num_rows, num_columns, title=""):
-    fig, axs = plt.subplots(num_rows, num_columns)
-    fig.suptitle(title)
-    ims = []
-    
-    if num_rows <= 1:
-        for i in range(num_columns):
-            axs[i].set_title(subplt_titles[i])
-            im = axs[i].imshow(frame, cmap='hot')
-            ims.append(im)
-            plt.xticks([]),plt.yticks([])
-    else:
-        counter = 0
-        for i in range(num_rows):
-            for j in range(num_columns):
-                if len(subplt_titles) < counter:
-                    axs[i,j].set_title(subplt_titles[counter])
-                    im = axs[i][j].imshow(frame, 'gray')
-                    ims.append(im)
-                    counter +=1
-    return ims    
-
-def update_comparison_plot(ims, images, saveIndex=None, save=False):
-    for i in range(len(ims)):
-        ims[i].set_data(images[i])
-    plt.draw()
-    if save:
-        create_folder_if_absent(bg_subtraction_pics_path)
-        pic_name = '{}{}.png'.format(bg_subtraction_pics_path, saveIndex)
-        plt.savefig(pic_name)
 
 def compare_plot(images, subplt_titles, num_rows, num_columns, title="", debug=False):
     fig, axs = plt.subplots(num_rows, num_columns)
@@ -151,38 +129,52 @@ def compare_plot(images, subplt_titles, num_rows, num_columns, title="", debug=F
 Postprocessing Pipeline
 """
 
-def cleaned_godec_img(L_frame, S_frame):
-    if np.sum(np.log(L_frame)) < np.sum(np.log(S_frame)):
-        return L_frame
-    return S_frame
+def get_godec_frame(M, L, S, width, height, i):
+    L_frame = normalize_frame(L[:, i].reshape(width, height).T)
+    S_frame = normalize_frame(S[:, i].reshape(width, height).T)
+    M_frame = normalize_frame(M[:, i].reshape(width, height).T)
+    img, probability = cleaned_godec_img(L_frame, S_frame, M_frame)
+    return img, probability
+
+def cleaned_godec_img(L_frame, S_frame, orig_frame, output_probability=False):
+    L_probability = foreground_probability(L_frame, orig_frame)
+    S_probability = foreground_probability(S_frame, orig_frame)
+    if np.amax(L_probability) < np.amax(S_probability):
+        probability = L_probability
+        img = L_frame
+    else:
+        probability = S_probability
+        img = S_frame
+    
+    if output_probability:
+        return img, probability
+    return img
 
 def is_default_contour(cnt):
-    return cv.contourArea(cnt) > 4 and cv.contourArea(cnt) < 12
+    return cv.contourArea(cnt) > 0
 
-def postprocess_img(img, debug=True, contour_detect_filter=None):
+def draw_contours_on_threshold_img(img, contours, color=(0,255,0)):
+    mask = img.copy()
+    color_img = cv.cvtColor(mask, cv.COLOR_GRAY2BGR)
+    return cv.drawContours(color_img, contours, -1, color, 1)
+
+def postprocess_img(img, all_images=True, output_contours=False):
     blurred_img = cv.medianBlur(img,5)
     _, thresholded_img = cv.threshold(blurred_img,127,255,cv.THRESH_BINARY)
-    mask = thresholded_img.copy()
-    contours, hierarchy = cv.findContours(mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+    contours, hierarchy = cv.findContours(thresholded_img, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
     
-    if contour_detect_filter: # allow users to input the size of the contour if the person is slightly bigger
-        selected_contours = [cnt for cnt in contours if contour_detect_filter(cnt)]
-    else:
-        selected_contours = [cnt for cnt in contours if is_default_contour(cnt)]
+    selected_contours = [cnt for cnt in contours if is_default_contour(cnt)]
     
     centroids = []
-    if len(selected_contours) > 0:
+    if len(selected_contours) >= 1:
         centroids = [get_centroid_from_contour(cnt) for cnt in selected_contours]
-    if not debug:
-        if contour_detect_filter:
-            return thresholded_img, centroids
-        else:
-            contour_areas = [cv.contourArea(cnt) for cnt in contours]
-            return contour_areas
     
-    color_img = cv.cvtColor(mask, cv.COLOR_GRAY2BGR)
-    annotated_img = cv.drawContours(color_img, selected_contours, -1, (0,255,0), 1)
+    annotated_img = draw_contours_on_threshold_img(thresholded_img, contours)
     images = [img, blurred_img, thresholded_img, annotated_img]
+    if not all_images:
+        if output_contours:
+            return thresholded_img, selected_contours, centroids
+        return thresholded_img, centroids
     return images, centroids
 
 def get_centroid_from_contour(cnt):
@@ -215,7 +207,8 @@ def bs_pipeline(files, debug=False, save=False):
         for i in tqdm(range(len(files))):
             L_frame = normalize_frame(L[:, i].reshape(width, height).T)
             S_frame = normalize_frame(S[:, i].reshape(width, height).T)
-            img = cleaned_godec_img(L_frame, S_frame)
+            img = cleaned_godec_img(L_frame, S_frame, get_frame(files[i]))
             images, centriods = postprocess_img(img)
             images.insert(0, get_frame_GREY(files[i]))
-            update_comparison_plot(ims, images, i, save)
+            update_comparison_plot(ims, images)
+            plt.savefig(bg_subtraction_pics_path+"{}.png".format(i))

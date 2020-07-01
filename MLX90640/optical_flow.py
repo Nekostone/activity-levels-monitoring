@@ -6,18 +6,15 @@ import cv2 as cv
 import matplotlib.pyplot as plt
 import numpy as np
 
-from file_utils import (get_all_files, get_frame, get_frame_GREY,
-                        get_frame_RGB, normalize_frame)
-from visualizer import init_heatmap, update_heatmap
+from background_subtraction import bs_godec, get_godec_frame, postprocess_img
+from file_utils import (create_folder_if_absent, get_all_files, get_frame,
+                        get_frame_GREY, get_frame_RGB, normalize_frame)
 from naive_presence_detection import get_init_heatmap_plot
-from background_subtraction import bs_godec
+from visualizer import (init_comparison_plot, init_heatmap,
+                        update_comparison_plot, update_heatmap)
 
 
-"""
-Optical Flow Algorithm
-"""
-
-def optical_flow_lk(files):
+def optical_flow_lk(files, track_length=10, detect_interval=5):
     print("Performing Lucas-Kanade Optical Flow")
     plot = get_init_heatmap_plot()
 
@@ -33,10 +30,9 @@ def optical_flow_lk(files):
 
     # Take first frame and find corners in it
     first_frame_gray = get_frame_GREY(files[0])
-    prevPts = cv.goodFeaturesToTrack(first_frame_gray, mask = None, **feature_params)
+    # TODO: instead of using good features to track, possibly just use contour points directly
+    prevPts = cv.goodFeaturesToTrack(first_frame_gray, mask = None, **feature_params) 
     color = np.random.randint(0,255,(100,3))
-    # Create a mask image for drawing purposes
-    mask = np.zeros_like(first_frame_gray)
     counter = 1
     prevImg = first_frame_gray
     while counter < len(files):
@@ -44,7 +40,14 @@ def optical_flow_lk(files):
         nextImg = frame.copy()
         update_heatmap(get_frame(files[counter]), plot)
         nextPts, status, err = cv.calcOpticalFlowPyrLK(prevImg, nextImg, prevPts, None, **lk_params)
+        displacement = nextPts - prevPts
+        if (abs(displacement) > 3).any():
+            print(displacement)
+            plt.xlabel("Displacement: {}".format(displacement))
+        else:
+            plt.xlabel("Displacement in x/y lower than 3 ")
         if nextPts is None:
+            print("Target not moving")
             prevPts = cv.goodFeaturesToTrack(frame, mask = None, **feature_params)
             nextPts, status, err = cv.calcOpticalFlowPyrLK(prevImg, nextImg, prevPts, None, **lk_params)
      
@@ -53,17 +56,6 @@ def optical_flow_lk(files):
         good_new = nextPts[status==1]
         good_old = prevPts[status==1]
     
-        # annotate the tracks
-        for i,(new,old) in enumerate(zip(good_new, good_old)):
-            a,b = new.ravel()
-            c,d = old.ravel()
-            mask = cv.line(mask, (a,b),(c,d), color[i].tolist(), 2)
-            frame = cv.circle(frame,(a,b),5,color[i].tolist(),-1)
-        img = cv.add(frame,mask)
-        cv.imshow('frame',img)
-        k = cv.waitKey(30) & 0xff
-        if k == 27:
-            break
         # Now update the previous frame and previous points
         prevImg = nextImg.copy()
         prevPts = good_new.reshape(-1,1,2)
@@ -71,32 +63,45 @@ def optical_flow_lk(files):
     
 
 def optical_flow_dense(files):
-    print("Performing Dense Optical Flow")
-    plot = get_init_heatmap_plot()
+    # Perform Godec first on all frames
+    M, LS, L, S, width, height = bs_godec(files)
     first_frame = get_frame(files[0])
-    prev_rgb = get_frame_RGB(files[0])
+    
+    # frames to be compared is after godec and postprocessing
+    godec_frame, probability = get_godec_frame(M, L, S, width, height, 0)
+    img, centroids = postprocess_img(godec_frame, all_images=False)
+    prev_gray = img
+    ims = init_comparison_plot(first_frame, ["Original", "Thresholded", "FlowS"], 1,3)
     test = cv.cvtColor(first_frame.astype("uint8"), cv.COLOR_GRAY2BGR)
-    hsv = np.zeros_like(test)
-    hsv[...,1] = 255
-    window_name = "optical_flow"
+    hsv_mask = np.zeros_like(test)
+    hsv_mask[...,1] = 255
+    window_name = "Dense Optical Flow"
 
     counter = 1
 
     while counter < len(files):
-        next_rgb = get_frame_RGB(files[counter])
-        flow = cv.calcOpticalFlowFarneback(prev_rgb,next_rgb, None, 0.5, 3, 15, 3, 5, 1.2, 0) # to tune parameters
-        mag, ang = cv.cartToPolar(flow[...,0], flow[...,1])
-        hsv[...,0] = ang*180/np.pi/2
-        hsv[...,2] = cv.normalize(mag,None,0,255,cv.NORM_MINMAX)
+        print(counter)
+        godec_frame, probability = get_godec_frame(M, L, S, width, height, counter)
+        img, centroids = postprocess_img(godec_frame, all_images=False)
+        next_gray = img
+        flow = cv.calcOpticalFlowFarneback(prev_gray,next_gray, 
+                                           None, 
+                                           pyr_scale = 0.5, 
+                                           levels = 5, 
+                                           winsize = 11, 
+                                           iterations = 5, 
+                                           poly_n = 5, 
+                                           poly_sigma = 1.1, 
+                                           flags = 0)
+        magnitude, angle = cv.cartToPolar(flow[...,0], flow[...,1])
+        hsv_mask[...,0] = angle*180/np.pi/2 # Set image hue according to the optical flow direction
+        hsv_mask[...,2] = cv.normalize(magnitude, None, 0, 255, cv.NORM_MINMAX) # Set image value according to the optical flow magnitude (normalized)
         
         # plotting of grayscale flowmap and data heatmap
-        cv.namedWindow(window_name,cv.WINDOW_NORMAL)
-        cv.resizeWindow(window_name, 120, 180)
-        cv.imshow(window_name,hsv)
-        update_heatmap(get_frame(files[counter]), plot)
-        
-        prev_rgb = next_rgb
+        update_comparison_plot(ims, [get_frame(files[counter]), next_gray, hsv_mask])
+        plt.title("Max Magnitude :" + str(np.amax(magnitude)) + "\nMax Angle:" + str(np.amax(angle)))
+        create_folder_if_absent("optical_flow_pics")
+        plt.savefig("optical_flow_pics/{}.png".format(counter))
+        prev_gray = next_gray
         k = cv.waitKey(30) & 0xff
-        # time.sleep(0.5)
-        
         counter += 1
