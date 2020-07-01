@@ -22,20 +22,37 @@ This repository contains the code for testing sensors and data analysis for the 
 
 Presence Detection (from Review 1)
 
+<details> <summary> Demo </summary>
+
 <div>
     <img src="screenshots/naive_presence_detection.gif">
 </div>
 
+</details>
+
+---
 Activity Level Analysis (from Review 2)
+
+<details> <summary> Demo </summary>
 
 <div>
     <img src="screenshots/mlx_18k_frames.png">
     <img src="screenshots/mlx_86k_frames.png">
 </div>
 
-Review 3
+</details>
+
+---
+
+Background Subtraction Pipeline (Review 3)
+
+<details> <summary> Demo </summary>
 
 <img src="screenshots/bs_pipeline.gif">
+
+> Credits to [Andrews Sobral](https://github.com/andrewssobral/godec) for a GoDec Python Implementation and [OpenCV](https://opencv.org/) for computer vision API. We experimented a lot with the different functions and parameters available before achieving this result.
+
+</details>
 
 ## Setup instructions for this repo
 
