@@ -7,8 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
 
-from background_subtraction import (bs_godec, cleaned_godec_img,
-                                    postprocess_img)
+from background_subtraction import bs_godec, cleaned_godec_img, postprocess_img
 from file_utils import (basename, create_folder_if_absent, get_all_files,
                         get_frame, get_frame_GREY, normalize_frame)
 
@@ -125,7 +124,7 @@ def plot_centroid_history_hexbin(interp_history):
     plt.show()
 
 
-def get_centroid_area_history(files):
+def get_centroid_area_history(files, debug=True, key_format="simple"):
     """
     -  Centroid Tracking
     - Background Subtraction Pipeline
@@ -151,15 +150,32 @@ def get_centroid_area_history(files):
         append_centroid_history(centroids, i, centroid_history)
     
     interpolated_centroid_history = Interpolator(centroid_history).history
-    centroid_area_numbers = [get_centroid_area_number(cnt) for cnt in interpolated_centroid_history]
-    area_counter = Counter(centroid_area_numbers)
-    area_movement_counter = Counter()
+    centroid_area_array = [get_centroid_area_number(cnt) for cnt in interpolated_centroid_history]
+    area_counter = Counter(centroid_area_array)
     
     for i in range(8):
         if i not in area_counter:
             area_counter[i] = 0
-    for i in range(len(centroid_area_numbers) - 1):
-        label = str(centroid_area_numbers[i])+"→"+str(centroid_area_numbers[i+1])
-        area_movement_counter[label] += 1
+            
+    if key_format == "simple":
+        area_movement_counter = Counter()
         
-    return area_counter, area_movement_counter, centroid_area_numbers, annotated_images
+        for i in range(len(centroid_area_array) - 1):
+            from_area = str(centroid_area_array[i])
+            to_area = str(centroid_area_array[i+1])
+            label = from_area+"→"+to_area
+            area_movement_counter[label] += 1
+        
+    elif key_format == "from_to":
+        area_movement_counter = {"None": Counter()}
+        for i in range(8):
+            area_movement_counter[str(i)] = Counter()
+            
+        for i in range(len(centroid_area_array) - 1):
+            from_area = str(centroid_area_array[i])
+            to_area = str(centroid_area_array[i+1])
+            area_movement_counter[from_area][to_area] += 1
+            
+    if debug:
+        return area_counter, area_movement_counter, centroid_area_array, annotated_images
+    return area_movement_counter

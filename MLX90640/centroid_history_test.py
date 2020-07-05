@@ -65,4 +65,4 @@ def test_get_centroid_area_history(files):
         
 # test_input_target_centroid_area()
 # test_get_centroid_history(plot=True)
-test_get_centroid_area_history(files)
+# test_get_centroid_area_history(files)

@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from background_subtraction import bs_godec
-from file_utils import (base_folder, create_folder_if_absent, get_all_files,
+from file_utils import (basename, create_folder_if_absent, get_all_files,
                         get_frame, get_frame_GREY, normalize_frame)
 from foreground_probability import (foreground_probability,
                                     probability_from_residue, residual_squares)

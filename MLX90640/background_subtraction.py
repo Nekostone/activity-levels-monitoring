@@ -7,7 +7,7 @@ from numpy import array, column_stack
 from tqdm import tqdm
 
 from config import bg_subtraction_gifs_path, bg_subtraction_pics_path
-from file_utils import (base_folder, create_folder_if_absent, get_all_files,
+from file_utils import (basename, create_folder_if_absent, get_all_files,
                         get_frame, get_frame_GREY, get_frame_RGB, normalize_frame)
 from foreground_probability import foreground_probability
 from godec import get_reshaped_frames, godec, plot_godec, set_data
