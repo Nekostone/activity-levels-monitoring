@@ -2,7 +2,8 @@ import csv
 import json
 import time
 from os import listdir, makedirs
-from os.path import basename, dirname, exists, getsize, isfile, join
+from os.path import dirname, exists, getsize, isfile, join, splitext
+from os.path import basename as base_folder
 
 import cv2 as cv
 import numpy as np
@@ -21,13 +22,30 @@ def save_npy(df, data_path, name=None, directory_sort=None):
     save_path = join(data_path, save_path)
     create_folder_if_absent(save_path)
   np.save(join(save_path,file), df)
-    
+  
+def npy_name_to_time(filename, directory_sort=None):
+    filename, file_extension = splitext(filename)
+    timestring = basename(filename) 
+    if directory_sort == "day":
+      time_tuple = time.strptime(timestring, "%Y.%m.%d")
+    elif directory_sort == "hour":
+      time_tuple = time.strptime(timestring, "%Y.%m.%d_%H00")
+    else:
+      time_tuple = time.strptime(timestring, "%Y.%m.%d_%H%M%S")
+    return time_tuple  
+
 def get_all_files(data_path):
     return sorted([join(data_path, f) for f in listdir(data_path) if isfile(join(data_path, f))])
 
 def write_to_json(content, file):
-  with open(file, 'w') as outfile:
-    json.dump(content, outfile)
+    if folder_path(file) != "":
+      create_folder_if_absent(folder_path(file))
+      with open(file, 'w') as outfile:
+        json.dump(content, outfile)
+    
+def basename(f):
+    filename, file_extension = splitext(f)
+    return base_folder(filename)
 
 def load_json(file):
   with open(file) as json_file:
@@ -47,9 +65,6 @@ def get_frame_RGB(file):
   
 def folder_path(file):
     return dirname(file)
-  
-def base_folder(file):
-  return basename(file)
 
 def create_folder_if_absent(folder_name):
   if not exists(folder_name):
@@ -57,8 +72,8 @@ def create_folder_if_absent(folder_name):
     print("Folder ",folder_name, " does not exist. Created it to save files.")
     
 def optimize_size(file):
-  print("Optimizing size...")
-  before_size = getsize(file)
-  optimize(file)
-  after_size = getsize(file)
-  print("Original Size: {}. Optimized to {}.".format(before_size, after_size))
+    print("Optimizing size...")
+    before_size = getsize(file)
+    optimize(file)
+    after_size = getsize(file)
+    print("Original Size: {}. Optimized to {}.".format(before_size, after_size))

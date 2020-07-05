@@ -8,7 +8,7 @@ from config import (bg_subtraction_gifs_path, bg_subtraction_pics_path,
                     bs_pics_path, bs_results_path, godec_data_path,
                     godec_gifs_path, godec_pics_path)
 
-from file_utils import (base_folder, create_folder_if_absent, get_all_files,
+from file_utils import (basename, create_folder_if_absent, get_all_files,
                         get_frame, get_frame_GREY, normalize_frame, save_npy)
 from godec import plot_bs_results, plot_godec
 from timer import Timer
@@ -41,7 +41,7 @@ def test_bs_godec(files, save_data=False, save_gif=False, gif_name=None, fps=60)
     if save_data:
         t.start()
         
-        npy_path = "godec_data/" + base_folder(data_path) 
+        npy_path = "godec_data/" + basename(data_path) 
         create_folder_if_absent(godec_data_path)
         save_npy(M, npy_path, "M")
         save_npy(L, npy_path, "L")
@@ -50,7 +50,7 @@ def test_bs_godec(files, save_data=False, save_gif=False, gif_name=None, fps=60)
         
         t.stop("Time taken to save godec result npy arrays: " )
     
-    plots_path = godec_pics_path + base_folder(data_path)  
+    plots_path = godec_pics_path + basename(data_path)  
     if not save_gif:
         print("Plotting....")
         t.start()
@@ -142,7 +142,7 @@ files = get_all_files(data_path)
 Test godec implementation
 """ 
 # test_bs_godec(files)
-# test_bs_godec(gif_name=base_folder(data_path)+".gif", fps=30, save_gif=True)
+# test_bs_godec(gif_name=basename(data_path)+".gif", fps=30, save_gif=True)
 
 """
 Test preobtained noise from godec with upcoming data
@@ -173,7 +173,7 @@ Test Background Model
 
 # test_bs_pipeline(files, debug=True, save=True)
 # pics = get_all_files(bg_subtraction_pics_path)
-# gif_name = base_folder(data_path)+"6.gif"
+# gif_name = basename(data_path)+"6.gif"
 # write_gif(pics, bg_subtraction_gifs_path+gif_name, start=0, end=len(pics), fps=3)
 
 # test_cleaned_godec_img()

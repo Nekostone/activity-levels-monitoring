@@ -5,7 +5,7 @@ import numpy as np
 from tqdm import tqdm
 
 from background_subtraction import bs_godec, cleaned_godec_img
-from file_utils import (base_folder, create_folder_if_absent, get_all_files,
+from file_utils import (basename, create_folder_if_absent, get_all_files,
                         get_frame, get_frame_GREY, normalize_frame,
                         optimize_size)
 from kalman_filter import (FrameKalmanFilter, PixelKalmanFilter,
@@ -29,7 +29,7 @@ def test_pixel_filter():
 
 def test_frame_filter(savegif=False):
     noise_remover = FrameKalmanFilter()
-    save_path = kalman_pics_path + base_folder(data_path)
+    save_path = kalman_pics_path + basename(data_path)
     create_folder_if_absent(save_path)
     data_i = get_frame(data[0])
     subplt_titles = ["Original Image", "noise removed"]
@@ -41,13 +41,13 @@ def test_frame_filter(savegif=False):
         plt.savefig(save_path + "/{}.png".format(i)) #make png
     if savegif:
         gif_pics = [save_path+ "/{}.png".format(i) for i in range(len(data))]
-        gif_path = kalman_gifs_path+base_folder(data_path)+".gif"
+        gif_path = kalman_gifs_path+basename(data_path)+".gif"
         write_gif(gif_pics, gif_path, 0, len(gif_pics), fps=30)
         optimize_size(gif_path)
 
 def test_frame_filter_for_movement_detection(with_godec=False, savegif=False):
     noise_remover = FrameKalmanFilter()
-    save_path = kalman_pics_path + base_folder(data_path)
+    save_path = kalman_pics_path + basename(data_path)
     create_folder_if_absent(save_path)
     data_i = get_frame_GREY(data[0])
     subplt_titles = ["Original Image", "Movement", "KF Original"]
@@ -76,7 +76,7 @@ def test_frame_filter_for_movement_detection(with_godec=False, savegif=False):
         plt.savefig(save_path + "/{}.png".format(i)) #make png
     if savegif:
         gif_pics = [save_path+ "/{}.png".format(i) for i in range(len(data))]
-        gif_path = kalman_gifs_path+base_folder(data_path)+"_movement.gif"
+        gif_path = kalman_gifs_path+basename(data_path)+"_movement.gif"
         write_gif(gif_pics, gif_path, 0, len(gif_pics), fps=20)
         optimize_size(gif_path)
 

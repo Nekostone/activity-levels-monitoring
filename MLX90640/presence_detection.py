@@ -2,26 +2,39 @@ import math
 import os
 from collections import Counter, defaultdict
 
-import matplotlib.pyplot as plt
 import numpy as np
-from tqdm import tqdm
-from background_subtraction import bs_godec, cleaned_godec_img, postprocess_img
-from centroid_history import Interpolator, append_centroid_history
-from file_utils import (basename, create_folder_if_absent, get_all_files,
-                        get_frame_GREY, normalize_frame)
-from naive_presence_detection import divide_grid_into_areas
 
-# def analyze(files, num_calibration_frames=30):
-#     total_frames = len(files)
-#     analysis_results = {}
-#     # TODO: calibrate contour detection area
-#     # contour_areas = [postprocess_img(get_frame_GREY(f)) for f in files[0:num_calibration_frames]]
-#     # counter = num_calibration_frames
-#     counter = 0
-#     while counter < total_frames:
-#         num_frames = 60*30
-#         if num_frames + counter >= total_frames:
-#             num_frames = total_frames - counter
-#         filename, file_extension = os.path.splitext(files[counter])
-#         initial_timestamp = filename
-#         centroid_locations, interpolated_centroid_history = get_centroid_area_history(files[counter:counter+num_frames])
+from centroid_history import get_centroid_area_history
+from file_utils import basename
+
+
+def analyze(files, num_frames_per_iteration=1800, key_format="from_to"):
+    """
+    Given an array of file names, 
+    get centroid area history iteratively over 30 mins of frames.
+
+    Args:
+        files ([type]): [description]
+        num_frames (int, optional): [description]. Defaults to 1800 (30 mins).
+    """
+    total_frames = len(files) # each frame is 1 second
+    analysis_results = {}
+    counter = 0
+    
+    while counter < total_frames:
+        start_index = counter
+        if counter + num_frames_per_iteration > total_frames:
+            end_index = total_frames
+        else:
+            end_index = counter + num_frames_per_iteration
+            
+        area_movement_counter = get_centroid_area_history(files[start_index:end_index], debug=False, key_format="from_to")
+        dictkey = basename(files[start_index])
+        analysis_results[dictkey] = {
+            "keyformat": "from_to",
+            "duration": end_index - start_index,
+            "analysis": area_movement_counter
+        }
+        counter += num_frames_per_iteration
+    
+    return analysis_results
