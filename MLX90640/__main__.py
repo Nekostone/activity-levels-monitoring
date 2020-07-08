@@ -60,12 +60,6 @@ def interpolate_values(df):
             df[x][y] = (df[x][y+1] + df[x+1][y] + df[x-1][y] + df[x][y-1]) / 4
     return df
 
-# TODO: Using a lambda function, Automate the cycle of: 
-# - collection of 30mins worth of data frame
-# - time series analysis
-# - free memory by deleting the 30mins of data after analysis is completed
-# - send data to cloud
-
 def save_serial_output(forever, num_samples=3000, mode=DEBUG_MODE):
     """
     Save serial output from arduino 
@@ -91,7 +85,6 @@ def save_serial_output(forever, num_samples=3000, mode=DEBUG_MODE):
             array = np.array(values)    
             if array.shape[0] == ARRAY_SHAPE[0] * ARRAY_SHAPE[1]:
                 df = np.reshape(array.astype(float), ARRAY_SHAPE)
-                # nan_value_indices = get_nan_value_indices(df)
                 df = interpolate_values(df)
                 max_temp = np.amax(df)
                 min_temp = np.amin(df)

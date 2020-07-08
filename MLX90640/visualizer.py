@@ -64,8 +64,8 @@ def update_heatmap(frame, plot):
   im.figure.canvas.draw_idle()
   fig.canvas.flush_events()
 
-def init_comparison_plot(frame, subplt_titles, num_rows, num_columns, title=""):
-    """General function for initializing an empty comparison plot involving more than 1 subplot.
+def init_comparison_plot(frame, subplt_titles, num_rows, num_columns, title="", same_frame_shape=True):
+    """General function for initializing an empty comparison plot involving more than 1 subplot for frames of same shapes.
 
     Args:
         frame (array): obtained from get_frame(file) or get_frame_GREY(file)
@@ -81,23 +81,42 @@ def init_comparison_plot(frame, subplt_titles, num_rows, num_columns, title=""):
     fig.suptitle(title)
     ims = []
     
-    if num_rows <= 1:
-        for i in range(num_columns):
-            axs[i].set_title(subplt_titles[i])
-            im = axs[i].imshow(frame, cmap='hot')
-            ims.append(im)
-            axs[i].set_xticks([])
-            axs[i].set_yticks([])
+    if same_frame_shape:
+      if num_rows <= 1:
+          for i in range(num_columns):
+              axs[i].set_title(subplt_titles[i])
+              im = axs[i].imshow(frame, cmap='hot')
+              ims.append(im)
+              axs[i].set_xticks([])
+              axs[i].set_yticks([])
+      else:
+          counter = 0
+          for i in range(num_rows):
+              for j in range(num_columns):
+                  axs[i][j].set_title(subplt_titles[counter])
+                  im = axs[i][j].imshow(frame, cmap='hot')
+                  axs[i][j].set_xticks([])
+                  axs[i][j].set_yticks([])
+                  ims.append(im)
+                  counter +=1
     else:
-        counter = 0
-        for i in range(num_rows):
-            for j in range(num_columns):
-                axs[i][j].set_title(subplt_titles[counter])
-                im = axs[i][j].imshow(frame, cmap='hot')
-                axs[i][j].set_xticks([])
-                axs[i][j].set_yticks([])
-                ims.append(im)
-                counter +=1
+      if num_rows <= 1:
+          for i in range(num_columns):
+              axs[i].set_title(subplt_titles[i])
+              im = axs[i].imshow(frame[i], cmap='hot')
+              ims.append(im)
+              axs[i].set_xticks([])
+              axs[i].set_yticks([])
+      else:
+          counter = 0
+          for i in range(num_rows):
+              for j in range(num_columns):
+                  axs[i][j].set_title(subplt_titles[counter])
+                  im = axs[i][j].imshow(frame[i][j], cmap='hot')
+                  axs[i][j].set_xticks([])
+                  axs[i][j].set_yticks([])
+                  ims.append(im)
+                  counter +=1
     return ims    
 
 def update_comparison_plot(ims, images):

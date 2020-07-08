@@ -7,8 +7,8 @@ from numpy import array, column_stack
 from tqdm import tqdm
 
 from config import bg_subtraction_gifs_path, bg_subtraction_pics_path
-from file_utils import (base_folder, create_folder_if_absent, get_all_files,
-                        get_frame, get_frame_GREY, normalize_frame)
+from file_utils import (basename, create_folder_if_absent, get_all_files,
+                        get_frame, get_frame_GREY, get_frame_RGB, normalize_frame)
 from foreground_probability import foreground_probability
 from godec import get_reshaped_frames, godec, plot_godec, set_data
 from kalman_filter import FrameKalmanFilter
@@ -20,11 +20,13 @@ Background Subtraction with Godec
 """
 
 
-def create_godec_input(files, normalize=True):
+def create_godec_input(files, normalize=True, rgb=False):
     i = 0
     for f in files:
         if type(f) == str:
-            if normalize:
+            if rgb:
+                frame = get_frame_RGB(f)
+            elif normalize:
                 frame = get_frame_GREY(f)
             else:
                 frame = get_frame(f)
@@ -40,8 +42,8 @@ def create_godec_input(files, normalize=True):
         i+=1
     return M, frame
 
-def bs_godec(files, debug=False, gif_name=False, normalize=True):
-    M , frame = create_godec_input(files, normalize)
+def bs_godec(files, debug=False, gif_name=False, normalize=True, rgb=False):
+    M , frame = create_godec_input(files, normalize, rgb)
     L, S, LS, RMSE = godec(M, iterated_power=5)
     height, width = frame.shape
     return M, LS, L, S, width, height
@@ -127,44 +129,52 @@ def compare_plot(images, subplt_titles, num_rows, num_columns, title="", debug=F
 Postprocessing Pipeline
 """
 
-def cleaned_godec_img(L_frame, S_frame, orig_frame):
+def get_godec_frame(M, L, S, width, height, i):
+    L_frame = normalize_frame(L[:, i].reshape(width, height).T)
+    S_frame = normalize_frame(S[:, i].reshape(width, height).T)
+    M_frame = normalize_frame(M[:, i].reshape(width, height).T)
+    img, probability = cleaned_godec_img(L_frame, S_frame, M_frame)
+    return img, probability
+
+def cleaned_godec_img(L_frame, S_frame, orig_frame, output_probability=False):
     L_probability = foreground_probability(L_frame, orig_frame)
     S_probability = foreground_probability(S_frame, orig_frame)
-    if np.sum(L_probability) < np.sum(S_probability):
+    if np.amax(L_probability) < np.amax(S_probability):
         probability = L_probability
         img = L_frame
     else:
         probability = S_probability
         img = S_frame
-    return img, probability
+    
+    if output_probability:
+        return img, probability
+    return img
 
 def is_default_contour(cnt):
-    return cv.contourArea(cnt) > 4 and cv.contourArea(cnt) < 12
+    return cv.contourArea(cnt) > 0
 
-def postprocess_img(img, debug=True, contour_detect_filter=None):
+def draw_contours_on_threshold_img(img, contours, color=(0,255,0)):
+    mask = img.copy()
+    color_img = cv.cvtColor(mask, cv.COLOR_GRAY2BGR)
+    return cv.drawContours(color_img, contours, -1, color, 1)
+
+def postprocess_img(img, all_images=True, output_contours=False):
     blurred_img = cv.medianBlur(img,5)
     _, thresholded_img = cv.threshold(blurred_img,127,255,cv.THRESH_BINARY)
-    mask = thresholded_img.copy()
-    contours, hierarchy = cv.findContours(mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+    contours, hierarchy = cv.findContours(thresholded_img, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
     
-    if contour_detect_filter: # allow users to input the size of the contour if the person is slightly bigger
-        selected_contours = [cnt for cnt in contours if contour_detect_filter(cnt)]
-    else:
-        selected_contours = [cnt for cnt in contours if is_default_contour(cnt)]
+    selected_contours = [cnt for cnt in contours if is_default_contour(cnt)]
     
     centroids = []
-    if len(selected_contours) > 0:
+    if len(selected_contours) >= 1:
         centroids = [get_centroid_from_contour(cnt) for cnt in selected_contours]
-    if not debug:
-        if contour_detect_filter:
-            return thresholded_img, centroids
-        else:
-            contour_areas = [cv.contourArea(cnt) for cnt in contours]
-            return contour_areas
     
-    color_img = cv.cvtColor(mask, cv.COLOR_GRAY2BGR)
-    annotated_img = cv.drawContours(color_img, selected_contours, -1, (0,255,0), 1)
+    annotated_img = draw_contours_on_threshold_img(thresholded_img, contours)
     images = [img, blurred_img, thresholded_img, annotated_img]
+    if not all_images:
+        if output_contours:
+            return thresholded_img, selected_contours, centroids
+        return thresholded_img, centroids
     return images, centroids
 
 def get_centroid_from_contour(cnt):
@@ -197,7 +207,7 @@ def bs_pipeline(files, debug=False, save=False):
         for i in tqdm(range(len(files))):
             L_frame = normalize_frame(L[:, i].reshape(width, height).T)
             S_frame = normalize_frame(S[:, i].reshape(width, height).T)
-            img, probability = cleaned_godec_img(L_frame, S_frame, get_frame(files[i]))
+            img = cleaned_godec_img(L_frame, S_frame, get_frame(files[i]))
             images, centriods = postprocess_img(img)
             images.insert(0, get_frame_GREY(files[i]))
             update_comparison_plot(ims, images)

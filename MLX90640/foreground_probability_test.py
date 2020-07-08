@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from background_subtraction import bs_godec
-from file_utils import (base_folder, create_folder_if_absent, get_all_files,
+from file_utils import (basename, create_folder_if_absent, get_all_files,
                         get_frame, get_frame_GREY, normalize_frame)
 from foreground_probability import (foreground_probability,
                                     probability_from_residue, residual_squares)
@@ -29,7 +29,7 @@ def test_foreground_probability(savegif=False):
         
         # this condition is now abstracted as the function cleaned_godec_img() in background_subtractio.py
         S_probability = foreground_probability(S_frame, frame)
-        if np.sum(L_probability) < np.sum(S_probability):
+        if np.amax(L_probability) > np.amax(S_probability):
             probability = L_probability
             img = L_frame
         else:
