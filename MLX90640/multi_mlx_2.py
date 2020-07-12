@@ -2,11 +2,10 @@ import time
 import paho.mqtt.client as mqtt
 import numpy as np
 import serial
-import keyboard
 from file_utils import save_npy, create_folder_if_absent
 from visualizer import init_heatmap, update_heatmap
 import asyncio
-
+import math
 
 """
 Initialization
@@ -14,7 +13,7 @@ Serial Parameters - Port, Baud Rate, Start Byte
 Program Mode - Plot (Debug) / Write Mode
 """
 
-SERIAL_PORT = 'COM3'  # for windows
+# SERIAL_PORT = 'COM3'  # for windows
 # SERIAL_PORT = "/dev/ttyS3" # for linux
 BAUD_RATE = 115200
 ARRAY_SHAPE = (24, 32)
@@ -23,13 +22,13 @@ DEBUG_MODE = 1
 WRITE_MODE = 0
 DATA_PATH = "data/switching test"  # change as it fits
 DATA_DIR_SORT = "day"
-broker = "39.109.145.141"
+broker = "192.168.2.103"
+port = 1883
 mlx_number = 0
 
 class MQTTClient:
-    def __init__(self, broker):
+    def __init__(self, broker, port):
 
-        port = 1884
         client = mqtt.Client("teck0")
         client.on_connect = on_connect
         client.on_disconnect = on_disconnect
@@ -81,89 +80,93 @@ def interpolate_values(df):
             df[x][y] = (df[x][y + 1] + df[x + 1][y] + df[x - 1][y] + df[x][y - 1]) / 4
     return df
 
-
-# TODO: Using a lambda function, Automate the cycle of:
-# - collection of 30mins worth of data frame
-# - time series analysis
-# - free memory by deleting the 30mins of data after analysis is completed
-# - send data to cloud
-
-def handle_df(values, counter):
+def handle_df(values, counter, write=False):
     array = np.array(values)
     if array.shape[0] == ARRAY_SHAPE[0] * ARRAY_SHAPE[1]:
         df = np.reshape(array.astype(float), ARRAY_SHAPE)
         df = interpolate_values(df)
+        if write: 
+            save_npy(df, DATA_PATH, directory_sort=DATA_DIR_SORT)
+
         return df, True
     else:
         return None, False
-        # if mode == DEBUG_MODE:
-        #     print("Updating Heatmap...", "[{}]".format(counter))
-        #     update_heatmap(df, plot)
+        
+def update_plot(decoded_values, counter):
+    df, legit_string = handle_df(decoded_values, counter)
 
-        # elif mode == WRITE_MODE:
-        #     print("Saving npy object...", "[{}]".format(counter))
-        #     save_npy(df, DATA_PATH, directory_sort=DATA_DIR_SORT)
-        #
-
+    if legit_string:
+        print("Updating Heatmap...", "[{}]".format(counter))
+        update_heatmap(df, plot)
+    else:
+        print("Not Updating Heatmap...", "[{}]".format(counter))
 
 def save_serial_output(ser, counter, plot, mlx_number=0):
     """
     Save serial output from arduino
     """
-    #
-    # change_port = None
-
     if mlx_number == 0:
-        ser.port = 'COM3'
-        print('com4 waiting')
+        ser.port = 'COM3' # CHANGE THIS
     elif mlx_number == 1:
-        ser.port = 'COM7'
-        print('com7 waiting')
+        ser.port = 'COM7' # CHANGE THIS
 
-    # elif mode == WRITE_MODE:
-    #     create_folder_if_absent(DATA_PATH)
-
-    print("Saving serial output")
     try:
         ser_bytes = ser.readline()
         decoded_string = ser_bytes.decode("utf-8", errors='ignore').strip("\r\n")
         values = decoded_string.split(",")[:-1]
-
-
-        df, legit_string = handle_df(values, counter)
-
-        if legit_string:
-            print("Updating Heatmap...", "[{}]".format(counter))
-            update_heatmap(df, plot)
-        else:
-            print("Not Updating Heatmap...", "[{}]".format(counter))
+        update_plot(values)
 
     except KeyboardInterrupt:
         raise
     except Exception as e:
         print(e)
-
-# def checkKeypress():
-#     if keyboard.is_pressed('1'):
-#         mlx_number = 0
-#     elif keyboard.is_pressed('2'):
-#         mlx_number = 1
-#     return mlx_number
+        
+def Log2(x): 
+    return (math.log10(x) / math.log10(2))
+    
+def isPowerOfTwo(n): 
+    return (math.ceil(Log2(n)) == math.floor(Log2(n)))
 
 def on_message(client,userdata, msg):
     global mlx_number
-    topic=msg.topic
     m_decode=str(msg.payload.decode("utf-8","ignore"))
+    
+    # debug message
     print("=============================")
-    print("message received! =>", m_decode)
-    print("=============================")
-    if m_decode == "livingroom":
-        print("MQTT MESAGE RECEIVED: MLX0")
+    print("message received!")
+    
+    # check topic
+    topic=msg.topic
+    print("Topic: " + topic)
+    sensor_type, house_id, room_type = topic.split("/")
+    print("Sensor Type: {}, House_ID: {}, Room_Type: {}".format(sensor_type, house_id, room_type))
+ 
+    # check decoded message content and change current MLX shown
+    if m_decode == "0":
+        binary_dict[room_type] = int(m_decode)
         mlx_number = 0
-    elif m_decode == "bedroom":
-        print("MQTT MESAGE RECEIVED: MLX1")
+        print("MLX now: ", + mlx_number)
+    elif m_decode == "1":
+        binary_dict[room_type] = int(m_decode)
         mlx_number = 1
-
+        print("MLX now: ", + mlx_number)
+    
+    state_value = 0
+    for x in weight_dict:
+        state_value += weight_dict[x] * binary_dict[x]
+        
+    
+    if isPowerOfTwo(state_value):
+        for x in binary_dict:
+            if x == room_type:
+                binary_dict[x] = 1
+            else:
+                binary_dict[x] = 0
+    
+    print("Dictionary: ")
+    print(binary_dict)
+    print("=============================")
+    
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
         print ("Connection OK!")
@@ -176,25 +179,45 @@ def on_disconnect(client, userdata, flags, rc=0):
 
 # if __name__ == "__main__":  #REMEMBER TO CHANGE THIS NAME LOLOL IT WONT RUN IF THIS NAME DOESNT MATCH THE FILENAME
 if True:
-    counter = 0
     min_temp = 28
     max_temp = 40
-    plot = init_heatmap("MLX90640 Heatmap", ARRAY_SHAPE, min_temp, max_temp)
-    ser = serial.Serial(SERIAL_PORT, BAUD_RATE)
-    ser.reset_output_buffer()
-    mqttclient = MQTTClient(broker)
-    mqttclient.subscribe(topic="haus/sensorz1")
+    # plot = init_heatmap("MLX90640 Heatmap", ARRAY_SHAPE, min_temp, max_temp)
+    # ser = serial.Serial(SERIAL_PORT, BAUD_RATE)
+    # ser.reset_output_buffer()
+    
+    # if mode == WRITE_MODE:
+    #     create_folder_if_absent(DATA_PATH)
+    
+    BED_ROOM = "bedroom"
+    LIVING_ROOM = "livingroom"
+    KITCHEN = "kitchen"
+    OUTSIDE = "nothome"
+    TOILET = "toilet"
+    
+    weight_arr = [BED_ROOM, LIVING_ROOM, KITCHEN, OUTSIDE, TOILET]
+    weight_dict = {weight_arr[i] : 2**i for i in range(5)} 
+    binary_dict = {weight_arr[i] : 0 for i in range(5)} 
+
+    print("Start weight dictionary:")
+    print(weight_dict)
+    
+    mqttclient = MQTTClient(broker, port)
+    mqttclient.subscribe(topic="bps/kjhouse")
+    mqttclient.subscribe(topic="bps/kjhouse/livingroom")
+    mqttclient.subscribe(topic="bps/kjhouse/bedroom")
     mqttclient.client.on_connect = on_connect
     mqttclient.client.on_disconnect = on_disconnect
     mqttclient.client.on_message = on_message  # makes it so that the callback on receiving a message calls on_message() above
     mqttclient.client.loop_start()
 
     while True:
-        counter +=1
-        print("HELLO")
-
-        # set mlx number as what the mqtt client receives
-        save_serial_output(ser, counter, plot, mlx_number)
+        pass
+        # === serial format
+        # save_serial_output(ser, counter, plot, mlx_number)
+        
+        # === get from esp format
+        # values = getfromsomewhere?
+        # update_plot(decoded_values=values)
 
     mqttclient.client.loop_stop()
     # client.disconnect()
