@@ -1,13 +1,14 @@
+import matplotlib.pyplot as plt
 import numpy as np
 
 from background_subtraction_test import test_postprocess_img
 from centroid_history import (Interpolator, get_centroid_area_history,
-                              get_centroid_area_number, get_centroid_history,
-                              input_target_centroid_area,
+                              get_centroid_area_number,
+                              get_centroid_displacement_history,
+                              get_centroid_history, input_target_centroid_area,
                               plot_centroid_history_hexbin)
 from file_utils import get_all_files
 from visualizer import init_heatmap, update_heatmap
-import matplotlib.pyplot as plt
 
 data = "data/teck_walk_out_and_in"
 files = get_all_files(data)
@@ -63,6 +64,10 @@ def test_get_centroid_area_history(files):
         update_heatmap(frame, track_plot)
         update_heatmap(annotated_images[i], contours_plot)
         
+def test_get_centroid_displacement_history(files):
+    displacement = get_centroid_displacement_history(files)
+    print("total displacement :", displacement)    
 # test_input_target_centroid_area()
 # test_get_centroid_history(plot=True)
 # test_get_centroid_area_history(files)
+test_get_centroid_displacement_history(files)
