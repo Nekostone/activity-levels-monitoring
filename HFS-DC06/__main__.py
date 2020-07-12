@@ -60,9 +60,10 @@ client.connect(BROKER, PORT)
 client.loop_start()
 
 # Subscribe to topic
-HOUSE_ID = "KJHaus"
+SENSOR_TYPE = "bps"
+HOUSE_ID = "kjhaus"
 ROOMTYPE = BED_ROOM
-topic = "/".join([HOUSE_ID, ROOMTYPE])
+topic = "/".join([SENSOR_TYPE, HOUSE_ID, ROOMTYPE])
 print("Subscribing to ", topic)
 client.subscribe(topic)
 
