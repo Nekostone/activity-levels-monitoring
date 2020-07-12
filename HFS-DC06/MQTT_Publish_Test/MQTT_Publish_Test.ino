@@ -5,7 +5,7 @@
 const char* ssid = "Doggie";
 const char* password = "@lph@numer!c";
 
-const char* mqtt_server = "39.109.145.141";
+const char* mqtt_server = "192.168.2.103";
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -16,9 +16,10 @@ int value = 0;
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200); //Start Serial
-  
+  int sensorPin = 17;
   setup_wifi();//Connection function is written below
-  client.setServer(mqtt_server, 1884);// Check for port number
+  client.setServer(mqtt_server, 1883);// Check for port number
+  pinMode(sensorPin, INPUT_PULLDOWN);
   //client.setCallback(callback);/Initiates callback if there is a message coming in from a topic
 
 }
@@ -96,9 +97,11 @@ void loop() {
   }
   client.loop();
 
-  long now = millis();
-  if (now - lastMsg > 1000) {
-    lastMsg = now;
+  Serial.print("Reading...");
+  bool val = digitalRead(17);
+  Serial.println(val);
+  if (val == HIGH) {
+    //lastMsg = now;
     
     // Convert the value to a char array
     //char tempString[8];
@@ -116,10 +119,14 @@ void loop() {
     //Serial.println(humString);
     //client.publish("esp32/humidity", humString);
     
-    String presenceString = "Presence Detected";
+    String presenceString = "1";
     int str_len = presenceString.length() + 1;
     char char_array[str_len];
     presenceString.toCharArray(char_array, str_len);
     client.publish("esp32/homeID/RoomID", char_array);
+    Serial.println("Published!");
+    val = LOW;
+    Serial.println(val);
+    delay(5000);
   }
 }
