@@ -186,10 +186,12 @@ def get_centroid_area_history(files, debug=True, key_format="simple"):
 
 def get_centroid_displacement_history(files, debug=True):
     """
-    Primary function for getting history of the following format:
+    Primary function for getting history of the following format:   
     {
-        "displacement": ...
+        "time": [x1, x2, ..., xn]
     }
+
+    where xi is the displacement from xi-1 to xi frame
     Instead of geting centroid area number for each centroid, 
     calculate displacement directly.
     
@@ -235,4 +237,5 @@ def get_centroid_displacement_history(files, debug=True):
             if debug:
                 r.data_source.stream({'x': [i], 'y': [curr_displacement]})
             
-    return displacement
+    key = basename(files[0])
+    return {key: displacement}
