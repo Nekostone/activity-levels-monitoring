@@ -161,7 +161,7 @@ def draw_contours_on_threshold_img(img, contours, color=(0,255,0)):
 def postprocess_img(img, all_images=True, output_contours=False):
     blurred_img = cv.medianBlur(img,5)
     _, thresholded_img = cv.threshold(blurred_img,127,255,cv.THRESH_BINARY)
-    contours, hierarchy = cv.findContours(thresholded_img, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+    contours, hierarchy = cv.findContours(thresholded_img, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)[-2:]
     
     selected_contours = [cnt for cnt in contours if is_default_contour(cnt)]
     

@@ -2,7 +2,7 @@ import copy
 import math
 import os
 from collections import Counter, defaultdict
-from bokeh.plotting import curdoc, figure
+#from bokeh.plotting import curdoc, figure
 import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
@@ -222,10 +222,11 @@ def get_centroid_displacement_history(files, debug=True):
     
     
     # plotting
-    if debug:
-        p = figure()
-        r = p.circle([], [])
-        curdoc().add_root(p)
+    #if debug:
+        #pass
+        #p = figure()
+        #r = p.circle([], [])
+        #curdoc().add_root(p)
         
     displacements = []
     for i in range(len(interpolated_centroid_history) - 1):
@@ -235,8 +236,8 @@ def get_centroid_displacement_history(files, debug=True):
             curr_displacement = np.sqrt((prev_centroid[0]-curr_centroid[0])**2 + (prev_centroid[1]-curr_centroid[1])**2)
             displacements.append(curr_displacement)
 
-            if debug:
-                r.data_source.stream({'x': [i], 'y': [curr_displacement]})
+            #if debug:
+                #r.data_source.stream({'x': [i], 'y': [curr_displacement]})
             
     key = basename(files[0])
     return {key: displacements}

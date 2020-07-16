@@ -40,7 +40,7 @@ def analyze_centroid_area_history(files, num_frames_per_iteration=1800, key_form
     return analysis_results
 
 
-def analyze_centroid_displacement_history(files, num_frames_per_iteration=1800, key_format="from_to"):
+def analyze_centroid_displacement_history(files, num_frames_per_iteration=1800):
     """
     Given an array of file names, 
     get centroid displacement history iteratively over 30 mins of frames.
@@ -60,6 +60,7 @@ def analyze_centroid_displacement_history(files, num_frames_per_iteration=1800, 
         else:
             end_index = counter + num_frames_per_iteration
             
+            print("running analysis for {} - {}".format(start_index, end_index))    
         displacement_dict = get_centroid_displacement_history(files[start_index:end_index], debug=False)
         
         dictkey = basename(files[start_index])
