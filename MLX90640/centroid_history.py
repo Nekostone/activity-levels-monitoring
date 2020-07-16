@@ -220,7 +220,6 @@ def get_centroid_displacement_history(files, debug=True):
     
     interpolated_centroid_history = Interpolator(centroid_history).history
     
-    displacement = 0
     
     # plotting
     if debug:
@@ -228,14 +227,16 @@ def get_centroid_displacement_history(files, debug=True):
         r = p.circle([], [])
         curdoc().add_root(p)
         
+    displacements = []
     for i in range(len(interpolated_centroid_history) - 1):
         prev_centroid = interpolated_centroid_history[i+1]
         curr_centroid = interpolated_centroid_history[i]
         if not (prev_centroid == None or curr_centroid == None): 
             curr_displacement = np.sqrt((prev_centroid[0]-curr_centroid[0])**2 + (prev_centroid[1]-curr_centroid[1])**2)
-            displacement += curr_displacement
+            displacements.append(curr_displacement)
+
             if debug:
                 r.data_source.stream({'x': [i], 'y': [curr_displacement]})
             
     key = basename(files[0])
-    return {key: displacement}
+    return {key: displacements}

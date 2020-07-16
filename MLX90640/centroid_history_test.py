@@ -64,11 +64,11 @@ def test_get_centroid_area_history(files):
         update_heatmap(frame, track_plot)
         update_heatmap(annotated_images[i], contours_plot)
         
-def test_get_centroid_displacement(files):
+def test_get_centroid_displacement_history(files):
     displacement = get_centroid_displacement_history(files)
     print("total displacement :", displacement)    
     
 # test_input_target_centroid_area()
 # test_get_centroid_history(plot=True)
 # test_get_centroid_area_history(files)
-test_get_centroid_displacement(files)
+test_get_centroid_displacement_history(files)
