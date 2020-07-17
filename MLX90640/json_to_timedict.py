@@ -36,6 +36,6 @@ def json_to_timedict(json_path):
                 split_time = split_time[0:2] + '30'
             elif int(split_time[2:4]) < 30:
                 split_time = split_time[0:2] + '00'
-            newdict[split_time] = data[i]
+            newdict[split_time] = data[i].tolist()
 
         return newdict

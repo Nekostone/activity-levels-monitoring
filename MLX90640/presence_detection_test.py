@@ -2,6 +2,7 @@ from file_utils import get_all_files, write_to_json, basename
 from presence_detection import analyze_centroid_displacement_history, analyze_centroid_area_history, displacement_json_to_timedict
 import time
 
+
 def test_analyze_centroid_area_history_short_time():
     data_path = "data/teck_calib_2"
     files = get_all_files(data_path)
@@ -51,6 +52,9 @@ def test_displacement_json_to_timedict():
     for i in newdict2:
         print(i, len(newdict2[i]))
     print('\n')
+    write_to_json(newdict, "sample_activity_log_and_displacement_history/formatted_history/2020.07.14.json")
+    write_to_json(newdict1, "sample_activity_log_and_displacement_history/formatted_history/2020.07.15.json")
+    write_to_json(newdict2, "sample_activity_log_and_displacement_history/formatted_history/2020.07.16.json")
 
 
 # test_analyze_centroid_area_history_short_time()
