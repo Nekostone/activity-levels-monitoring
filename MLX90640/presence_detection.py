@@ -1,7 +1,7 @@
 import math
 import os
 from collections import Counter, defaultdict
-
+from json_to_timedict import json_to_timedict
 import numpy as np
 
 from centroid_history import get_centroid_area_history, get_centroid_displacement_history
@@ -68,3 +68,6 @@ def analyze_centroid_displacement_history(files, num_frames_per_iteration=1800):
         counter += num_frames_per_iteration
     
     return analysis_results
+
+def displacement_json_to_timedict(json_path):
+    return json_to_timedict(json_path)

@@ -1,11 +1,7 @@
 import json
 import time
-from os.path import splitext
-import numpy as np
 
-filepath = 'data/2020.07.14.json'
-filepath1 = 'data/2020.07.15.json'
-filepath2 = 'data/2020.07.16.json'
+import numpy as np
 
 
 def name_to_time(filename, directory_sort=None):
@@ -43,18 +39,3 @@ def json_to_timedict(json_path):
             newdict[split_time] = data[i]
 
         return newdict
-
-
-newdict = json_to_timedict(filepath)
-for i in newdict:
-    print(i)
-print('\n')
-newdict1 = json_to_timedict(filepath1)
-for i in newdict1:
-    print(i)
-print('\n')
-newdict2 = json_to_timedict(filepath2)
-for i in newdict2:
-    print(i)
-print('\n')
-
