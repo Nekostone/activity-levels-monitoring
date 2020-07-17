@@ -54,6 +54,7 @@ dkms.conf
 # Python
 .idea
 .venv
+venv/
 __pycache__
 catstone.egg-info
 .vscode
