@@ -13,13 +13,13 @@ Program Mode - Plot (Debug) / Write Mode
 """
 
 # SERIAL_PORT = 'COM5' # for windows
-SERIAL_PORT = "/dev/ttyS3" # for linux
+SERIAL_PORT = "/dev/ttyUSB0" # for linux
 BAUD_RATE = 115200
 ARRAY_SHAPE = (24,32)
 
-DEBUG_MODE = 1
-WRITE_MODE = 0
-DATA_PATH = "data/sw_second_trial_night" # change as it fits 
+DEBUG_MODE = 0
+WRITE_MODE = 1
+DATA_PATH = "data/dataset_for_xavier_day1" # change as it fits 
 DATA_DIR_SORT = "day"
 
 def interpolate_values(df):

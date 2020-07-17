@@ -2,7 +2,7 @@ import copy
 import math
 import os
 from collections import Counter, defaultdict
-
+#from bokeh.plotting import curdoc, figure
 import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
@@ -126,10 +126,14 @@ def plot_centroid_history_hexbin(interp_history):
 
 def get_centroid_area_history(files, debug=True, key_format="simple"):
     """
-    -  Centroid Tracking
-    - Background Subtraction Pipeline
-    - Return something for analysis
-
+    Primary function to be called for obtaining history in the following format:
+    {
+        0: {
+            0: ...,
+            1: ...,
+        },
+        1: { ... }
+    }
     Arguments:
         files {[str]} -- up to 30 mins of files, since we decided that recalibration of godec should be done every 30 mins
     """
@@ -179,3 +183,61 @@ def get_centroid_area_history(files, debug=True, key_format="simple"):
     if debug:
         return area_counter, area_movement_counter, centroid_area_array, annotated_images
     return area_movement_counter
+
+def get_centroid_displacement_history(files, debug=True):
+    """
+    Primary function for getting history of the following format:   
+    {
+        "time": [x1, x2, ..., xn]
+    }
+
+    where xi is the displacement from xi-1 to xi frame
+    Instead of geting centroid area number for each centroid, 
+    calculate displacement directly.
+    
+    Args:
+        files ([type]): [description]
+        debug (bool, optional): [description]. Defaults to True.
+
+    Returns:
+        [type]: [description]
+    """
+    annotated_images = []
+    centroid_history = []
+    M, LS, L, S, width, height = bs_godec(files)
+    
+    for i in range(len(files)):
+        img = get_frame_GREY(files[i])
+        L_frame = normalize_frame(L[:, i].reshape(width, height).T)
+        S_frame = normalize_frame(S[:, i].reshape(width, height).T)
+        img = cleaned_godec_img(L_frame, S_frame, get_frame(files[i]))
+        images, centroids = postprocess_img(img)
+        
+        annotated_img = images[-1]
+        annotated_images.append(annotated_img)
+        
+        append_centroid_history(centroids, i, centroid_history)
+    
+    interpolated_centroid_history = Interpolator(centroid_history).history
+    
+    
+    # plotting
+    #if debug:
+        #pass
+        #p = figure()
+        #r = p.circle([], [])
+        #curdoc().add_root(p)
+        
+    displacements = []
+    for i in range(len(interpolated_centroid_history) - 1):
+        prev_centroid = interpolated_centroid_history[i+1]
+        curr_centroid = interpolated_centroid_history[i]
+        if not (prev_centroid == None or curr_centroid == None): 
+            curr_displacement = np.sqrt((prev_centroid[0]-curr_centroid[0])**2 + (prev_centroid[1]-curr_centroid[1])**2)
+            displacements.append(curr_displacement)
+
+            #if debug:
+                #r.data_source.stream({'x': [i], 'y': [curr_displacement]})
+            
+    key = basename(files[0])
+    return {key: displacements}
