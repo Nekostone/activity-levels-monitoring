@@ -19,6 +19,7 @@ ARRAY_SHAPE = (24,32)
 
 DEBUG_MODE = 0
 WRITE_MODE = 1
+PUBLISH_MODE = 2
 DATA_PATH = "data/dataset_for_xavier_day1" # change as it fits 
 DATA_DIR_SORT = "day"
 
@@ -96,6 +97,9 @@ def save_serial_output(forever, num_samples=3000, mode=DEBUG_MODE):
                 elif mode == WRITE_MODE:
                     print("Saving npy object...", "[{}]".format(counter))
                     save_npy(df, DATA_PATH, directory_sort=DATA_DIR_SORT)
+
+                elif mode == PUBLISH_MODE:
+                    pass
                 
             counter += 1
 

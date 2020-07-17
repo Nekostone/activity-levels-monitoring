@@ -7,6 +7,10 @@ from visualizer import init_heatmap, update_heatmap
 import asyncio
 import math
 
+import main
+from multiprocessing import Process
+import sys
+
 """
 Initialization
 Serial Parameters - Port, Baud Rate, Start Byte
@@ -22,9 +26,10 @@ DEBUG_MODE = 1
 WRITE_MODE = 0
 DATA_PATH = "data/switching test"  # change as it fits
 DATA_DIR_SORT = "day"
-broker = "192.168.2.103"
+broker = "192.168.2.109"
 port = 1883
 mlx_number = 0
+
 
 class MQTTClient:
     def __init__(self, broker, port):
@@ -129,11 +134,14 @@ def isPowerOfTwo(n):
 
 def on_message(client,userdata, msg):
     global mlx_number
+    global write_to_npy_process
+
     m_decode=str(msg.payload.decode("utf-8","ignore"))
     
     # debug message
     print("=============================")
     print("message received!")
+    print("msg: {0}".format(m_decode))
     
     # check topic
     topic=msg.topic
@@ -146,10 +154,15 @@ def on_message(client,userdata, msg):
         binary_dict[room_type] = int(m_decode)
         mlx_number = 0
         print("MLX now: ", + mlx_number)
+        if write_to_npy_process:
+            write_to_npy_process.terminate()
     elif m_decode == "1":
         binary_dict[room_type] = int(m_decode)
         mlx_number = 1
         print("MLX now: ", + mlx_number)
+        # spawns parallel process to write sensor data to .npy files
+        write_to_npy_process = Process(target=main.save_serial_output, args = (True,), kwargs={"mode":1,}) 
+        write_to_npy_process.start()
     
     state_value = 0
     for x in weight_dict:
@@ -166,7 +179,7 @@ def on_message(client,userdata, msg):
     print("Dictionary: ")
     print(binary_dict)
     print("=============================")
-    
+ 
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
         print ("Connection OK!")
