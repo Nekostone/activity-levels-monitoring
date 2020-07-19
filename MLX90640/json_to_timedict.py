@@ -1,6 +1,6 @@
 import json
 import time
-
+import scipy
 import numpy as np
 
 
@@ -27,7 +27,7 @@ def json_to_timedict(json_path):
         newdict = {}
         for i in data:
             if len(data[i]) < 1800:
-                data[i] = padarray(data[i], 1800)
+                data[i] = scipy.signal.resample(data[i], 1800)
             split = i.split('_')
             split_time = split[1]
             split_time = split_time[:-2]
