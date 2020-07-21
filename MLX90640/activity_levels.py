@@ -1,15 +1,29 @@
-import json
-
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.interpolate
 import scipy.signal
 
-def get_activity_levels(data, debug=False):
-    """Produce
+"""
+This script is to be called by the NUC.
+"""
+
+def stitch_data(dictionaries):
+    """Stitch different dictionary data that are within the same time interval
+    Returns a compiled dictionary containing only one key denotating the time interval.
 
     Args:
-        data (dict): dictionary loaded from mqtt message from rpi
+        dictionaries ([dict]): displacement dictionaries from different Rpis
+    """
+    #TODO
+    pass
+
+
+
+def get_activity_levels(data, debug=False):
+    """Produce activity levels plot 
+
+    Args:
+        data (dict): compiled displacement dictionary for one time interval
     """
 
     width = 300
@@ -37,9 +51,3 @@ def get_activity_levels(data, debug=False):
         plt.grid()
         plt.show()
 
-def test_activity_levels():
-    with open('sample_activity_levels/formatted_history/2020.07.14.json') as f:
-        data = json.load(f)
-        get_activity_levels(data, debug=True)
-        
-test_activity_levels()
