@@ -5,6 +5,14 @@ import scipy.signal
 
 """
 This script is to be called by the NUC.
+    1. During a time interval, say "0900-0930", the NUC receives different MQTT messages 
+        that contains a json. These MQTT messages can be loaded into their respective 
+        dictionary by the json module.
+    2. After the time interval has passed, the NUC should call stitch_data(dictionaries) for all
+        the dictionaries that has a key within that time interval, and produce a 
+        compiled_dictionary consisting of the key "0900-0930".
+    3. Analyze the displacement history by calling get_activity_levels(compiled_dictionary). 
+        The result should be saved somewhere so that analysis can be performed across days, weeks or months.
 """
 
 def stitch_data(dictionaries):
@@ -20,10 +28,12 @@ def stitch_data(dictionaries):
 
 
 def get_activity_levels(data, debug=False):
-    """Produce activity levels plot 
+    """Produce activity levels plot based on one time interval
+    #TODO: save the out somewhere, compile different outs across days, weeks and months.
 
     Args:
         data (dict): compiled displacement dictionary for one time interval
+        debug (bool): whether the plot is shown for that time interval
     """
 
     width = 300
