@@ -64,7 +64,7 @@ pygifsicle==1.0.1
 pygobject==3.22.0
 pyinotify==0.9.6
 PyJWT==1.4.2
-pyOpenSSL==16.2.0
+pyOpenSSL==17.5.0
 pyparsing==2.1.10
 pyserial==3.2.1
 pytest==3.0.6
