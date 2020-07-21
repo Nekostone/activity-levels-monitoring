@@ -14,7 +14,7 @@ decorator==4.0.11
 drumhat==0.1.0
 envirophat==1.0.0
 ExplorerHAT==0.4.2
-Flask==0.12.1
+Flask==1.0
 fourletterphat==0.1.0
 getkey==0.6.5
 google-api-core==1.8.2
