@@ -1,5 +1,7 @@
 from socket import *
 from struct import pack
+import pickle
+import numpy as np
 
 
 class ClientProtocol:
@@ -16,14 +18,14 @@ class ClientProtocol:
         self.socket.close()
         self.socket = None
 
-    def send_data(self, image_data):
+    def send_data(self, data):
 
         # use struct to make sure we have a consistent endianness on the length
-        length = pack('>Q', len(image_data))
+        length = pack('>Q', len(data))
 
         # sendall to make sure it blocks if there's back-pressure on the socket
         self.socket.sendall(length)
-        self.socket.sendall(image_data)
+        self.socket.sendall(data)
 
         ack = self.socket.recv(1)
 
@@ -32,11 +34,15 @@ class ClientProtocol:
 if __name__ == '__main__':
     cp = ClientProtocol()
 
-    image_data = None
+    data = None
+    data = np.array([[1,2,3],[4,5,6],[7,8,9]])
+    data = pickle.dumps(data)
+    """
     with open('/home/catstone/Desktop/to_send.txt', 'rb') as fp:
-        image_data = fp.read()
+        data = fp.read()
 
-    assert(len(image_data))
-    cp.connect('127.0.0.1', 9999)
-    cp.send_data(image_data)
+    assert(len(data))
+    """
+    cp.connect('192.168.2.109', 9999)
+    cp.send_data(data)
     cp.close()
