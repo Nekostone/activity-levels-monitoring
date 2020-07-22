@@ -1,6 +1,8 @@
 import os
 from socket import *
 from struct import unpack
+import pickle
+import numpy as np
 
 
 class ServerProtocol:
@@ -37,10 +39,15 @@ class ServerProtocol:
                     connection.shutdown(SHUT_WR)
                     connection.close()
 
+                """
                 with open(os.path.join(
                         self.output_dir, 'tempi{0}'.format(self.file_num)), 'wb'
                 ) as fp:
                     fp.write(data)
+                """
+                received_arr = pickle.loads(data)
+                print("received_array: {0}".format(received_arr))
+                print("type(received_array): {0}".format(type(received_arr)))
 
                 self.file_num += 1
         finally:
