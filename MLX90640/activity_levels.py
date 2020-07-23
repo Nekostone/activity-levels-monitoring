@@ -19,12 +19,32 @@ def stitch_data(dictionaries):
     """Stitch different dictionary data that are within the same time interval
     Returns a compiled dictionary containing only one key denotating the time interval.
 
+    AKA it does this:
+    [{key1:[...], key2:[...], key3:[...]}, {key4:[...], key5:[...]}, {key6:[...]}] where the keys fall within a specific 30 min interval
+    ---> {key1:[...], key2:[...], key3:[...], key4:[...], key5:[...], key6:[...]}
+    ---> {30min_interval:[..................]}
+
     Args:
         dictionaries ([dict]): displacement dictionaries from different Rpis
     """
     #TODO
-    pass
+    biggus_dictus = {}
+    for dictionary in dictionaries:
+        for key in dictionary:
+            biggus_dictus[key] = dictionary[key]
+    sorted_dict = dict(sorted(biggus_dictus.items()))
 
+    output = {}
+    biggus_listus = []
+    keys = []
+    for i in sorted_dict:
+        keys.append(i)
+        for j in sorted_dict[i]:
+            biggus_listus.append(j)
+
+    output[keys[0]] = biggus_listus
+
+    return output
 
 
 def get_activity_levels(data, debug=False):
@@ -61,3 +81,6 @@ def get_activity_levels(data, debug=False):
         plt.grid()
         plt.show()
 
+
+test_list = [{'0907': ['a', 'b', 'c'], '0906': ['d', 'e', 'f'], '0910': ['g', 'h', 'i']}, {'0901': ['j', 'k', 'l'], '0902': ['m', 'n', 'o']}, {'0904': ['p', 'q', 'r']}]
+print(stitch_data(test_list))
