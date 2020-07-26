@@ -45,6 +45,6 @@ def json_to_timedict(json_path, interpolate=False, shift_30min=False):
             if shift_30min:  # if you wanna shift the timestamps to approximate the 30 min blocks
                 split_time = shift_to_30min(split_time)
 
-            newdict[split_time] = data[i].tolist()
+            newdict[split_time] = data[i]
 
         return newdict
