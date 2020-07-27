@@ -5,6 +5,7 @@ from collections import Counter, defaultdict
 #from bokeh.plotting import curdoc, figure
 import matplotlib.pyplot as plt
 import numpy as np
+from datetime import datetime
 from tqdm import tqdm
 
 from background_subtraction import bs_godec, cleaned_godec_img, postprocess_img
@@ -231,9 +232,15 @@ def get_centroid_displacement_history(files):
         if not (prev_centroid == None or curr_centroid == None): 
             curr_displacement = np.sqrt((prev_centroid[0]-curr_centroid[0])**2 + (prev_centroid[1]-curr_centroid[1])**2)
             displacements.append(curr_displacement)
+    
+    startTime = basename(files[0])
+    endTime = basename(files[-1])
+    timeElapsed = datetime.strptime(endTime, "%Y.%m.%d_%H%M%S") - datetime.strptime(startTime, "%Y.%m.%d_%H%M%S")
+    
             
     return {"start": basename(files[0]),
             "end": basename(files[-1]),
+            "timeElapsedInSeconds": timeElapsed.total_seconds(),
             "numFrames": numFrames,
-            "frames": displacements
+            "frames": displacements,
             }

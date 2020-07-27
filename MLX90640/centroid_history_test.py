@@ -10,7 +10,7 @@ from centroid_history import (Interpolator, get_centroid_area_history,
 from file_utils import get_all_files
 from visualizer import init_heatmap, update_heatmap
 
-data = "data/teck_walk_out_and_in"
+data = "data/teck_calib_2"
 files = get_all_files(data)
 
 def test_input_target_centroid_area():
@@ -71,4 +71,4 @@ def test_get_centroid_displacement_history(files):
 # test_input_target_centroid_area()
 # test_get_centroid_history(plot=True)
 # test_get_centroid_area_history(files)
-# test_get_centroid_displacement_history(files)
+test_get_centroid_displacement_history(files)

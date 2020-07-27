@@ -32,8 +32,9 @@ def test_analyze_centroid_displacement_history():
     files = get_all_files(data_path)
     print("Number of files: {}".format(len(files)))
     analysis_results = analyze_centroid_displacement_history(files)
-    print("Analysis done, writing to {}.json...".format(basename(data_path)))
-    write_to_json(analysis_results, "displacement_history/{}.json".format(basename(data_path)))
+    json_name = basename(data_path)
+    print("Analysis done, writing to {}.json...".format(json_name))
+    write_to_json(analysis_results, "displacement_history/{}.json".format(json_name))
     end = time.time()
     print("Time taken to collect displacement dictionary for {} files : {}".format(len(files), end - start))
 
