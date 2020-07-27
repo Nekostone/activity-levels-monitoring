@@ -1,5 +1,6 @@
 from file_utils import get_all_files, write_to_json, basename
-from presence_detection import analyze_centroid_displacement_history, analyze_centroid_area_history, displacement_json_to_timedict
+from presence_detection import analyze_centroid_displacement_history, analyze_centroid_area_history
+from json_to_timedict import json_to_timedict
 import time
 
 
@@ -36,19 +37,19 @@ def test_analyze_centroid_displacement_history():
     end = time.time()
     print("Time taken to collect displacement dictionary for {} files : {}".format(len(files), end - start))
 
-def test_displacement_json_to_timedict():
+def test_json_to_timedict():
     filepath = 'sample_activity_levels/displacement_history/2020.07.14.json'
     filepath1 = 'sample_activity_levels/displacement_history/2020.07.15.json'
     filepath2 = 'sample_activity_levels/displacement_history/2020.07.16.json'
-    newdict = displacement_json_to_timedict(filepath)
+    newdict = json_to_timedict(filepath)
     for i in newdict:
         print(i, len(newdict[i]))
     print('\n')
-    newdict1 = displacement_json_to_timedict(filepath1)
+    newdict1 = json_to_timedict(filepath1)
     for i in newdict1:
         print(i, len(newdict1[i]))
     print('\n')
-    newdict2 = displacement_json_to_timedict(filepath2)
+    newdict2 = json_to_timedict(filepath2)
     for i in newdict2:
         print(i, len(newdict2[i]))
     print('\n')
@@ -60,5 +61,4 @@ def test_displacement_json_to_timedict():
 # test_analyze_centroid_area_history_short_time()
 # test_analyze_centroid_area_history_long_time()
 # test_analyze_centroid_displacement_history()
-
-test_displacement_json_to_timedict()
+# test_json_to_timedict()

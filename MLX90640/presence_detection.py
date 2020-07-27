@@ -52,6 +52,7 @@ def analyze_centroid_displacement_history(files, num_frames_per_iteration=1800):
     total_frames = len(files)
     analysis_results = {}
     counter = 0
+    num_interval = 1
     
     while counter < total_frames:
         start_index = counter
@@ -59,15 +60,10 @@ def analyze_centroid_displacement_history(files, num_frames_per_iteration=1800):
             end_index = total_frames
         else:
             end_index = counter + num_frames_per_iteration
-            
             print("running analysis for {} - {}".format(start_index, end_index))    
-        displacement_dict = get_centroid_displacement_history(files[start_index:end_index], debug=False)
-        
-        dictkey = basename(files[start_index])
+        displacement_dict = {num_interval: get_centroid_displacement_history(files[start_index:end_index], debug=False)}
         analysis_results = {**analysis_results, **displacement_dict}
         counter += num_frames_per_iteration
+        num_interval += 1
     
     return analysis_results
-
-def displacement_json_to_timedict(json_path):
-    return json_to_timedict(json_path)

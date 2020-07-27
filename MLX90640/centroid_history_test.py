@@ -66,9 +66,9 @@ def test_get_centroid_area_history(files):
         
 def test_get_centroid_displacement_history(files):
     displacement = get_centroid_displacement_history(files)
-    print("total displacement :", displacement)    
+    print(displacement)    
     
 # test_input_target_centroid_area()
 # test_get_centroid_history(plot=True)
 # test_get_centroid_area_history(files)
-test_get_centroid_displacement_history(files)
+# test_get_centroid_displacement_history(files)
