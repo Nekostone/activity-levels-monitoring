@@ -184,7 +184,7 @@ def get_centroid_area_history(files, debug=True, key_format="simple"):
         return area_counter, area_movement_counter, centroid_area_array, annotated_images
     return area_movement_counter
 
-def get_centroid_displacement_history(files, debug=True):
+def get_centroid_displacement_history(files):
     """
     Primary function for getting history of the following format:   
     {
@@ -219,14 +219,6 @@ def get_centroid_displacement_history(files, debug=True):
         append_centroid_history(centroids, i, centroid_history)
     
     interpolated_centroid_history = Interpolator(centroid_history).history
-    
-    
-    # plotting
-    #if debug:
-        #pass
-        #p = figure()
-        #r = p.circle([], [])
-        #curdoc().add_root(p)
         
     displacements = []
     for i in range(len(interpolated_centroid_history) - 1):
@@ -235,9 +227,6 @@ def get_centroid_displacement_history(files, debug=True):
         if not (prev_centroid == None or curr_centroid == None): 
             curr_displacement = np.sqrt((prev_centroid[0]-curr_centroid[0])**2 + (prev_centroid[1]-curr_centroid[1])**2)
             displacements.append(curr_displacement)
-
-            #if debug:
-                #r.data_source.stream({'x': [i], 'y': [curr_displacement]})
             
     key = basename(files[0])
     return {key: displacements}
