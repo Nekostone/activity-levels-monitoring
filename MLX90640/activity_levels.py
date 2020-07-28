@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.interpolate
 import scipy.signal
-from datetime import datetime
 
 """
 This script is to be called by the NUC.
@@ -12,7 +11,7 @@ This script is to be called by the NUC.
     2. After the time interval has passed, the NUC should call stitch_data(dictionaries) for all
         the dictionaries that has a key within that time interval, and produce a 
         compiled_dictionary consisting of the key "0900-0930".
-    3. Analyze the displacement history by calling get_activity_levels(compiled_dictionary).
+    3. Analyze the displacement history by calling get_activity_levels(compiled_dictionary). 
         The result should be saved somewhere so that analysis can be performed across days, weeks or months.
 """
 
@@ -47,14 +46,20 @@ def stitch_data(dictionaries):
 
     return output
 
+
 def get_activity_levels(data, debug=False):
     """Produce activity levels plot based on one time interval
+<<<<<<< HEAD
     # Iterate through keys to perform resampling, then stitch together based on timestamps
+=======
+    #TODO: save the out somewhere, compile different outs across days, weeks and months.
+>>>>>>> parent of 5bea12b... Formatted 24 hour activity levels
 
     Args:
         data (dict): compiled displacement dictionary for one time interval
         debug (bool): whether the plot is shown for that time interval
     """
+<<<<<<< HEAD
     activity = []
     end_time = 0
     
@@ -82,23 +87,45 @@ def get_activity_levels(data, debug=False):
 
     width = 3600 # Rect function width
     rect  = np.ones(width)
+=======
+
+    width = 300
+    rect = np.ones(width) # rect function for convolution in seconds
+    time_key = list(data.keys())[0] # or replace with any time
+    y = data[time_key] 
+    original = y[0:1500]
+    x = np.linspace(0,np.size(original)-1, np.size(original))
+    
+>>>>>>> parent of 5bea12b... Formatted 24 hour activity levels
     # Generate activity data
-    xnew = np.linspace(0,len(activity),len(activity))
+    ynew  = scipy.signal.resample(original, 1800)
+    xnew = np.linspace(0,1799,1800)
 
+    out    = np.dot(np.correlate(ynew, rect, 'valid'), 1/(width/10))
     offset = (width/2)-1
-    xaxis = np.linspace(offset, np.size(activity)-offset, np.size(activity)-width+1)
+    xaxis = np.linspace(offset, offset+np.size(out)-1, np.size(out))
 
+<<<<<<< HEAD
     out = np.dot(np.correlate(activity, rect, 'valid'), 1/(width/10))
     start_time = data[list(data.keys())[0]]['start']
     end_time = data[list(data.keys())[-1]]['end']
 
+=======
+    ogplot = np.dot(np.correlate(y, rect, 'valid'), 1/(width/10))
+>>>>>>> parent of 5bea12b... Formatted 24 hour activity levels
 
     if debug:
-        plt.plot(xaxis, out, '--', label='Activity')
-        plt.plot(xnew, activity, '--', label='Raw')
-        # plt.plot(xaxis, out, '--', label='Resampled')
-        # plt.plot(xnew,y, label='Instant')
+        plt.plot(xaxis, ogplot, '--', label='0-padded')
+        plt.plot(xaxis, out, '--', label='Resampled')
+        plt.plot(xnew,y, label='Instant')
         plt.legend(loc='best')
         plt.grid()
         plt.show()
+<<<<<<< HEAD
         print("Started at {}, ended at {}".format(start_time, end_time))
+=======
+
+
+test_list = [{'0907': ['a', 'b', 'c'], '0906': ['d', 'e', 'f'], '0910': ['g', 'h', 'i']}, {'0901': ['j', 'k', 'l'], '0902': ['m', 'n', 'o']}, {'0904': ['p', 'q', 'r']}]
+print(stitch_data(test_list))
+>>>>>>> parent of 5bea12b... Formatted 24 hour activity levels
