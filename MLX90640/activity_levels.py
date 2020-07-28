@@ -76,7 +76,8 @@ def get_activity_levels(data, debug=False):
             activity = activity + zeropad #add zeros for missing frames from start of the day
             
         activity = activity + list(data[i]['frames'])
-
+    if len(activity) < 86399:
+        activity = activity + list(np.zeros(86399-len(activity)))
     activity = np.array(activity) # Convert list to nparray
 
     width = 3600 # Rect function width
