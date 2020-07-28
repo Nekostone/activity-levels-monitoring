@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.interpolate
 import scipy.signal
+from datetime import datetime
 
 """
 This script is to be called by the NUC.
@@ -11,7 +12,7 @@ This script is to be called by the NUC.
     2. After the time interval has passed, the NUC should call stitch_data(dictionaries) for all
         the dictionaries that has a key within that time interval, and produce a 
         compiled_dictionary consisting of the key "0900-0930".
-    3. Analyze the displacement history by calling get_activity_levels(compiled_dictionary). 
+    3. Analyze the displacement history by calling get_activity_levels(compiled_dictionary).
         The result should be saved somewhere so that analysis can be performed across days, weeks or months.
 """
 
@@ -46,41 +47,57 @@ def stitch_data(dictionaries):
 
     return output
 
-
 def get_activity_levels(data, debug=False):
     """Produce activity levels plot based on one time interval
     #TODO: save the out somewhere, compile different outs across days, weeks and months.
+    # Iterate through keys to perform resampling, then stitch together based on timestamps
 
     Args:
         data (dict): compiled displacement dictionary for one time interval
         debug (bool): whether the plot is shown for that time interval
     """
+    activity = []
+    end_time = 0
+    for i in data.keys():
+        data[i]['frames'] = scipy.signal.resample(np.array(data[i]['frames']), int(data[i]['timeElapsedInSeconds'])) # i is the current value
+        if int(i) != 1:
+            zeropad  =  datetime.strptime(data[i]['start'], "%Y.%m.%d_%H%M%S") - datetime.strptime(data[str(int(i)-1)]['end'], "%Y.%m.%d_%H%M%S")
+            zeropad  =  zeropad.total_seconds() #add zeros for missing frames from previous data
+            # print(zeropad)
+            zeropad  = list(np.zeros(int(zeropad)))
+            activity = activity + zeropad
 
-    width = 300
-    rect = np.ones(width) # rect function for convolution in seconds
-    time_key = list(data.keys())[0] # or replace with any time
-    y = data[time_key] 
-    original = y[0:1500]
-    x = np.linspace(0,np.size(original)-1, np.size(original))
-    
+        elif int(i) == 1:
+            start    = data[i]['start'][:-6] + '000000'
+            zeropad  = datetime.strptime(data[i]['start'], "%Y.%m.%d_%H%M%S") - datetime.strptime(start, "%Y.%m.%d_%H%M%S")
+            zeropad  = zeropad.total_seconds()
+            # print(zeropad)
+            zeropad  = list(np.zeros(int(zeropad)))
+            activity = activity + zeropad #add zeros for missing frames from start of the day
+            
+        activity = activity + list(data[i]['frames'])
+    print(len(activity))
+
+    activity = np.array(activity) # Convert list to nparray
+
+    width = 3600 # Rect function width
+    rect  = np.ones(width)
     # Generate activity data
-    ynew  = scipy.signal.resample(original, 1800)
-    xnew = np.linspace(0,1799,1800)
+    xnew = np.linspace(0,len(activity),len(activity))
 
-    out    = np.dot(np.correlate(ynew, rect, 'valid'), 1/(width/10))
     offset = (width/2)-1
-    xaxis = np.linspace(offset, offset+np.size(out)-1, np.size(out))
+    xaxis = np.linspace(offset, np.size(activity)-offset, np.size(activity)-width+1)
 
-    ogplot = np.dot(np.correlate(y, rect, 'valid'), 1/(width/10))
+    out = np.dot(np.correlate(activity, rect, 'valid'), 1/(width/10))
 
     if debug:
-        plt.plot(xaxis, ogplot, '--', label='0-padded')
-        plt.plot(xaxis, out, '--', label='Resampled')
-        plt.plot(xnew,y, label='Instant')
+        plt.plot(xaxis, out, '--', label='Activity')
+        plt.plot(xnew, activity, '--', label='Raw')
+        # plt.plot(xaxis, out, '--', label='Resampled')
+        # plt.plot(xnew,y, label='Instant')
         plt.legend(loc='best')
         plt.grid()
         plt.show()
 
-
-test_list = [{'0907': ['a', 'b', 'c'], '0906': ['d', 'e', 'f'], '0910': ['g', 'h', 'i']}, {'0901': ['j', 'k', 'l'], '0902': ['m', 'n', 'o']}, {'0904': ['p', 'q', 'r']}]
-print(stitch_data(test_list))
+# test_list = [{'0907': ['a', 'b', 'c'], '0906': ['d', 'e', 'f'], '0910': ['g', 'h', 'i']}, {'0901': ['j', 'k', 'l'], '0902': ['m', 'n', 'o']}, {'0904': ['p', 'q', 'r']}]
+# print(stitch_data(test_list))
