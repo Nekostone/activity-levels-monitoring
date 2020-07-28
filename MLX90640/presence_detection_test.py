@@ -54,9 +54,9 @@ def test_json_to_timedict():
     for i in newdict2:
         print(i, len(newdict2[i]))
     print('\n')
-    write_to_json(newdict, "sample_activity_log_and_displacement_history/formatted_history/2020.07.14.json")
-    write_to_json(newdict1, "sample_activity_log_and_displacement_history/formatted_history/2020.07.15.json")
-    write_to_json(newdict2, "sample_activity_log_and_displacement_history/formatted_history/2020.07.16.json")
+    write_to_json(newdict, "sample_activity_levels/old_format/formatted_history/2020.07.14.json")
+    write_to_json(newdict1, "sample_activity_levels/old_format/formatted_history/2020.07.15.json")
+    write_to_json(newdict2, "sample_activity_levels/old_format/formatted_history/2020.07.16.json")
 
 
 # test_analyze_centroid_area_history_short_time()

@@ -49,7 +49,6 @@ def stitch_data(dictionaries):
 
 def get_activity_levels(data, debug=False):
     """Produce activity levels plot based on one time interval
-    #TODO: save the out somewhere, compile different outs across days, weeks and months.
     # Iterate through keys to perform resampling, then stitch together based on timestamps
 
     Args:
@@ -58,8 +57,9 @@ def get_activity_levels(data, debug=False):
     """
     activity = []
     end_time = 0
+    
     for i in data.keys():
-        data[i]['frames'] = scipy.signal.resample(np.array(data[i]['frames']), int(data[i]['timeElapsedInSeconds'])) # i is the current value
+        data[i]['frames'] = scipy.signal.resample(np.array(data[i]['frames']), int(data[i]['timeElapsedInSeconds']))
         if int(i) != 1:
             zeropad  =  datetime.strptime(data[i]['start'], "%Y.%m.%d_%H%M%S") - datetime.strptime(data[str(int(i)-1)]['end'], "%Y.%m.%d_%H%M%S")
             zeropad  =  zeropad.total_seconds() #add zeros for missing frames from previous data
@@ -76,7 +76,6 @@ def get_activity_levels(data, debug=False):
             activity = activity + zeropad #add zeros for missing frames from start of the day
             
         activity = activity + list(data[i]['frames'])
-    print(len(activity))
 
     activity = np.array(activity) # Convert list to nparray
 
@@ -89,6 +88,9 @@ def get_activity_levels(data, debug=False):
     xaxis = np.linspace(offset, np.size(activity)-offset, np.size(activity)-width+1)
 
     out = np.dot(np.correlate(activity, rect, 'valid'), 1/(width/10))
+    start_time = data[list(data.keys())[0]]['start']
+    end_time = data[list(data.keys())[-1]]['end']
+
 
     if debug:
         plt.plot(xaxis, out, '--', label='Activity')
@@ -98,6 +100,4 @@ def get_activity_levels(data, debug=False):
         plt.legend(loc='best')
         plt.grid()
         plt.show()
-
-# test_list = [{'0907': ['a', 'b', 'c'], '0906': ['d', 'e', 'f'], '0910': ['g', 'h', 'i']}, {'0901': ['j', 'k', 'l'], '0902': ['m', 'n', 'o']}, {'0904': ['p', 'q', 'r']}]
-# print(stitch_data(test_list))
+        print("Started at {}, ended at {}".format(start_time, end_time))
