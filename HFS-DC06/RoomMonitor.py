@@ -19,12 +19,6 @@ class RoomMonitor(StateMachine):
 
     # Define transition states
 
-    # Repeated states
-    living2living = living.to(living)
-    bed2bed       = bedroom.to(bedroom)
-    kitch2kitch   = kitchen.to(kitchen)
-    shit2shit     = toilet.to(toilet)
-
     # Transitions
     liv2bed    = living.to(bedroom)
     bed2liv = bedroom.to(living)
@@ -37,6 +31,9 @@ class RoomMonitor(StateMachine):
 
     liv2out    = living.to(out)
     out2liv    = out.to(living)
+
+    toilet2bed = toilet.to(bedroom)
+    bed2toilet = bedroom.to(toilet)
     
     liv2x = liv2bed | liv2toilet | liv2kitch | liv2out
     

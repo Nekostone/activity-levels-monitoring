@@ -1,5 +1,5 @@
 import time
-
+from   datetime import datetime
 import paho.mqtt.client as mqtt
 import serial
 
@@ -23,23 +23,40 @@ def on_message(client,userdata, msg):
     m_decode=str(msg.payload.decode("utf-8","ignore"))
     print("message received! =>", m_decode)
     
-def send_msg_if_room_changed(serial_output: int, room1: str, room2: str, last: str, topic: str, state_machine):
-    if serial_output//2 == 1:
-        new = room2
-        if last == room1 and new == room2: # change state if last value different from current
-            state_machine.liv2bed()
-            print(state_machine.current_state.name)
-            client.publish(topic, state_machine.current_state.name)
-            last = room2
-    elif serial_output == 1:
-        new = room1
-        if last == room2 and new == room1: # change state if last value different from current
-            state_machine.bed2liv()
-            print(state_machine.current_state.name)
-            client.publish(topic, state_machine.current_state.name)
-            last = room1
+def send_msg_if_room_changed(serial_output: int, last: str, topic: str, state_machine):
+    if serial_output == 1:
+        new = 'Bedroom'
+    elif serial_output == 2:
+        new = 'Living Room'
+    elif serial_output == 4:
+        new = 'Kitchen'
+    elif serial_output == 8:
+        new = 'Toilet'
+    elif serial_output == 16:
+        new = 'Not home'
     else:
         return last, False
+
+    if last == 'Bedroom' and new == 'Toilet':
+        state_machine.bed2toilet()
+    elif last =='Toilet' and new == 'Bedroom':
+        state_machine.toilet2bed()
+    elif last == 'Bedroom' and new == 'Living Room':
+        state_machine.bed2liv()
+    elif last == 'Living Room' and new == 'Bedroom':
+        statemachine.liv2bed()
+    elif last == 'Living Room' and new == 'Toilet':
+        statemachine.liv2toilet()
+    elif last == 'Toilet' and new == 'Living Room':
+        statemachine.toilet2liv()
+    elif last == 'Living Room' and new == 'Not home':
+        statemachine.liv2out()
+    elif last == 'Not home' and new == 'Living Room':
+        statemachine.out2liv()
+
+    print(state_machine.current_state.name)
+    client.publish(topic, state_machine.current_state.name)
+    last = new
     return last, True
 
 # MQTT Setup
@@ -84,7 +101,7 @@ if __name__ == "__main__":
         try:
             x = int(x)
             # Room presence values given as bit vector ['Bedroom', 'Living Room']
-            last_visited, room_changed = send_msg_if_room_changed(x, initial_room, ROOMTYPE, last_visited, topic, state_machine)
+            last_visited, room_changed = send_msg_if_room_changed(x, last_visited, topic, state_machine)
             
         except ValueError:
             print("Invalid string")
