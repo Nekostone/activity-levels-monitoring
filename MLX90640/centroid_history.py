@@ -2,10 +2,10 @@ import copy
 import math
 import os
 from collections import Counter, defaultdict
-#from bokeh.plotting import curdoc, figure
+from datetime import datetime
+
 import matplotlib.pyplot as plt
 import numpy as np
-from datetime import datetime
 from tqdm import tqdm
 
 from background_subtraction import bs_godec, cleaned_godec_img, postprocess_img
@@ -185,7 +185,7 @@ def get_centroid_area_history(files, debug=True, key_format="simple"):
         return area_counter, area_movement_counter, centroid_area_array, annotated_images
     return area_movement_counter
 
-def get_centroid_displacement_history(files, input_type="filenames", start_time=""):
+def displacement_history(files, start_time, end_time):
     """
     Primary function for getting history of the following format:   
     {
@@ -222,7 +222,6 @@ def get_centroid_displacement_history(files, input_type="filenames", start_time=
         append_centroid_history(centroids, i, centroid_history)
     
     interpolated_centroid_history = Interpolator(centroid_history).history
-        
     displacements = []
     numFrames = len(interpolated_centroid_history)
     for i in range(numFrames - 1):
@@ -232,15 +231,6 @@ def get_centroid_displacement_history(files, input_type="filenames", start_time=
             curr_displacement = np.sqrt((prev_centroid[0]-curr_centroid[0])**2 + (prev_centroid[1]-curr_centroid[1])**2)
             displacements.append(curr_displacement)
     
-    if input_type == "filenames":
-        startTime = basename(files[0])
-        endTime = basename(files[-1])
-    elif input_type == "npframes":
-        startTime = start_time
-        endTime = time.strftime("%Y.%m.%d_%H%M%S",time.localtime(time.time()))
-    else:
-        raise Error("invalid input type to get centroid displacement history")
-  
     timeElapsed = datetime.strptime(endTime, "%Y.%m.%d_%H%M%S") - datetime.strptime(startTime, "%Y.%m.%d_%H%M%S")
             
     return {"start": basename(files[0]),

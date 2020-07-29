@@ -14,7 +14,7 @@ import busio
 import main
 from file_utils import create_folder_if_absent, save_npy
 from visualizer import init_heatmap, update_heatmap
-from presence_detection import analyze_centroid_displacement_history
+from centroid_history import get_centroid
 from socket import *
 from struct import pack
 import json
@@ -148,6 +148,7 @@ def on_message(client,userdata, msg):
         binary_dict[room_type] = int(m_decode)
         if data_collection_process:
             data_collection_process.terminate()
+            end_time = time.strftime("%Y.%m.%d_%H%M%S",time.localtime(time.time()))
             collected_data = []
             while not data.empty():
                 try:
@@ -159,19 +160,20 @@ def on_message(client,userdata, msg):
             try:
 
                 print("Sending data array of length: {}".format(len(collected_data)))
-                # collected_data = analyze_centroid_displacement_history(collected_data)
-                start_time = time.strftime("%Y.%m.%d_%H%M%S",time.localtime(time.time()))
-                analysis_result = analyze_centroid_displacement_history(collected_data, input_type="npframes", start_time=start_time)
-                print(type(analysis_result))
+                analysis_result = centroid_history(collected_data, start_time, end_time)
                 print(analysis_result)
                 to_send = json.dumps(analysis_result)
-                mqttclient.send_message(to_send, "/".join("Rpi", house_id, RPI_room_type))
+                
                 #to_send = json.dumps({'test':len(collected_data)})
+                mqttclient.send_message(to_send, "/".join("Rpi", house_id, RPI_room_type))
                 byte_data = to_send.encode("utf-8")
                 cp.connect(broker, 9999)
                 print("len(byte_data): {0}".format(len(byte_data)))
                 cp.send_data(byte_data)
                 cp.close()
+                
+                start_time = None
+                end_time = None
             except Exception as e:
                 print(e)
     
@@ -183,6 +185,7 @@ def on_message(client,userdata, msg):
         # spawns parallel process to write sensor data to .npy files
         data_collection_process = Process(target=main.collect_data, args=(data, ))
         data_collection_process.start()
+        start_time = time.strftime("%Y.%m.%d_%H%M%S",time.localtime(time.time()))
     
 def on_connect(client, userdata, flags, rc):
     if rc == 0:

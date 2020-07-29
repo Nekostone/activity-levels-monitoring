@@ -20,7 +20,7 @@ Say for a single room, you have data recorded on 14 July 2020 from 8.13am to 09.
 
 ### New Implementation
 
-1. Run `get_centroid_displacement_history(files)` on the data collected above, you will get this dictionary which you can save as a .json.
+1. Run `displacement_history(files)` on the data collected above, you will get this dictionary which you can save as a .json.
 
 ```python
 {
@@ -33,7 +33,7 @@ Say for a single room, you have data recorded on 14 July 2020 from 8.13am to 09.
 
 ### Old Implementation
 
-1. Run `get_centroid_displacement_history(files)` on the data collected above, you will get this dictionary which you can save as a .json.
+1. Run `displacement_history(files)` on the data collected above, you will get this dictionary which you can save as a .json.
 
 ```python
 {
