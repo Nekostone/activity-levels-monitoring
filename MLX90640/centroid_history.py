@@ -5,6 +5,7 @@ from collections import Counter, defaultdict
 #from bokeh.plotting import curdoc, figure
 import matplotlib.pyplot as plt
 import numpy as np
+from datetime import datetime
 from tqdm import tqdm
 
 from background_subtraction import bs_godec, cleaned_godec_img, postprocess_img
@@ -184,11 +185,14 @@ def get_centroid_area_history(files, debug=True, key_format="simple"):
         return area_counter, area_movement_counter, centroid_area_array, annotated_images
     return area_movement_counter
 
-def get_centroid_displacement_history(files, debug=True):
+def get_centroid_displacement_history(files):
     """
     Primary function for getting history of the following format:   
     {
-        "time": [x1, x2, ..., xn]
+        start: "20200714_081300",
+        end: "20200714_084300",
+        numFrames: 1800,
+        frames: [x1, ..., x1800]
     }
 
     where xi is the displacement from xi-1 to xi frame
@@ -219,25 +223,24 @@ def get_centroid_displacement_history(files, debug=True):
         append_centroid_history(centroids, i, centroid_history)
     
     interpolated_centroid_history = Interpolator(centroid_history).history
-    
-    
-    # plotting
-    #if debug:
-        #pass
-        #p = figure()
-        #r = p.circle([], [])
-        #curdoc().add_root(p)
         
     displacements = []
-    for i in range(len(interpolated_centroid_history) - 1):
+    numFrames = len(interpolated_centroid_history)
+    for i in range(numFrames - 1):
         prev_centroid = interpolated_centroid_history[i+1]
         curr_centroid = interpolated_centroid_history[i]
         if not (prev_centroid == None or curr_centroid == None): 
             curr_displacement = np.sqrt((prev_centroid[0]-curr_centroid[0])**2 + (prev_centroid[1]-curr_centroid[1])**2)
             displacements.append(curr_displacement)
-
-            #if debug:
-                #r.data_source.stream({'x': [i], 'y': [curr_displacement]})
+    
+    startTime = basename(files[0])
+    endTime = basename(files[-1])
+    timeElapsed = datetime.strptime(endTime, "%Y.%m.%d_%H%M%S") - datetime.strptime(startTime, "%Y.%m.%d_%H%M%S")
+    
             
-    key = basename(files[0])
-    return {key: displacements}
+    return {"start": basename(files[0]),
+            "end": basename(files[-1]),
+            "timeElapsedInSeconds": timeElapsed.total_seconds(),
+            "numFrames": numFrames,
+            "frames": displacements,
+            }
