@@ -2,6 +2,7 @@ import time
 from   datetime import datetime
 import paho.mqtt.client as mqtt
 import serial
+import numpy as np
 
 from RoomMonitor import RoomMonitor, LIVING_ROOM, BED_ROOM, KITCHEN, TOILET, OUTSIDE
 
@@ -26,13 +27,13 @@ def on_disconnect(client, userdata, flags, rc=0):
 def on_message(client,userdata, msg):
     topic=msg.topic
     
-    print("=============================") # debug message
-    print("message received!")
+    # print("=============================") # debug message
+    # print("message received!")
     m_decode=str(msg.payload.decode("utf-8","ignore"))
-    print("msg: {0}".format(m_decode))
+    # print("msg: {0}".format(m_decode))
     
     device_type, house_id, room_type = topic.split("/")
-    print("Device Type: {}, House_ID: {}, Room_Type: {}".format(device_type, house_id, room_type))
+    # print("Device Type: {}, House_ID: {}, Room_Type: {}".format(device_type, house_id, room_type))
 
 
     if m_decode == "0" or m_decode == "1":
@@ -52,34 +53,44 @@ def on_message(client,userdata, msg):
     
 def send_msg_if_room_changed(state_value: int, last: str, topic: str, state_machine):
     if state_value == 1:
-        new = 'Bedroom'
+        new = 'bedroom'
     elif state_value == 2:
-        new = 'Living Room'
+        new = 'livingroom'
     elif state_value == 4:
         new = 'Kitchen'
     elif state_value == 8:
         new = 'Toilet'
     elif state_value == 16:
-        new = 'Not home'
+        new = 'exit'
     else:
         return last, False
 
-    if last == 'Bedroom' and new == 'Toilet':
+    if last == 'bedroom' and new == 'Toilet':
         state_machine.bed2toilet()
-    elif last =='Toilet' and new == 'Bedroom':
+        last = new
+    elif last =='Toilet' and new == 'bedroom':
         state_machine.toilet2bed()
-    elif last == 'Bedroom' and new == 'Living Room':
+        last = new
+    elif last == 'bedroom' and new == 'livingroom':
         state_machine.bed2liv()
-    elif last == 'Living Room' and new == 'Bedroom':
+        last = new
+    elif last == 'livingroom' and new == 'bedroom':
         statemachine.liv2bed()
-    elif last == 'Living Room' and new == 'Toilet':
+        last = new
+    elif last == 'livingroom' and new == 'toilet':
         statemachine.liv2toilet()
-    elif last == 'Toilet' and new == 'Living Room':
+        last = new
+    elif last == 'toilet' and new == 'livingroom':
         statemachine.toilet2liv()
-    elif last == 'Living Room' and new == 'Not home':
+        last = new
+    elif last == 'livingroom' and new == 'exit':
         statemachine.liv2out()
-    elif last == 'Not home' and new == 'Living Room':
+        last = new
+    elif last == 'exit' and new == 'livingroom':
         statemachine.out2liv()
+        last = new
+    else:
+        return last, False
 
     print(state_machine.current_state.name)
     client.publish(topic, state_machine.current_state.name)
@@ -91,8 +102,8 @@ client_name = "swcannotconnecthalp"
 client = mqtt.Client(client_name)
 
 # Connect to broker
-BROKER = '39.109.156.167' 
-PORT   = 1884 
+BROKER = '192.168.0.102' 
+PORT   = 1883
 
 # Attach MQTT Client callback functions 
 client.on_connect    = on_connect
@@ -112,9 +123,10 @@ topics = [LIVING_ROOM, BED_ROOM, OUTSIDE, TOILET, KITCHEN]
 for sensor in sensors:
     for topic in topics:
         print("Subscribing to ", topic)
-        client.subscribe("/".join(sensor, HOUSE_ID, topic))
+        print("/".join([sensor, HOUSE_ID, topic]))
+        client.subscribe("/".join([sensor, HOUSE_ID, topic]))
 
-client.publish("/".join(DEVICE_TYPE, HOUSE_ID, topic), "Started NUC!")
+client.publish("/".join([DEVICE_TYPE, HOUSE_ID, topic]), "Started NUC!")
 
 # State Machine and monitoring setup
 state_machine  = RoomMonitor()
@@ -126,10 +138,16 @@ print("Monitoring Presence...")
 weight_arr = [BED_ROOM, LIVING_ROOM, KITCHEN, OUTSIDE, TOILET]
 weight_dict = {weight_arr[i] : 2**i for i in range(5)} 
 binary_dict = {weight_arr[i] : 0 for i in range(5)}
-    
+
+
 while True:
+    x = 0
+    print(binary_dict)
+    for room in weight_arr:
+        x = x + int(binary_dict[room])*int(weight_dict[room])
+    print(x)
     try:
         last_visited, room_changed = send_msg_if_room_changed(x, last_visited, topic, state_machine)
-        
+        # print(state_machine.current_state.name)
     except ValueError:
         print("Invalid string")
