@@ -19,6 +19,7 @@ from socket import *
 from struct import pack
 import json
 
+
 class ClientProtocol:
 
     def __init__(self):
@@ -103,7 +104,9 @@ def interpolate_values(df):
 
 def collect_data():
     global data
+    print("id(data): {0}".format(id(data)))
     frame = [0] * 768
+    counter = 0
     while True:
         try:
             mlx.getFrame(frame)  #  get the mlx values and put them into the array we just created
@@ -112,12 +115,15 @@ def collect_data():
                 df = np.reshape(array.astype(float), ARRAY_SHAPE)
                 df = interpolate_values(df)
                 data.append(df)
+                print("Frame collected [{}]".format(counter))
+                print("actual length: {}".format(len(data)))
+                counter += 1
         except ValueError:
             # these happen, no biggie - retry
             print("ValueError during data collection")
             pass
         except InterruptedError:
-            print("Stopping data collection...")
+            print("Stopping data collection..., num frames collected: {}".format(len(data)))
     
 
 def Log2(x): 
@@ -128,6 +134,7 @@ def isPowerOfTwo(n):
 
 def on_message(client,userdata, msg):
     global data
+    print("id(data): {0}".format(id(data)))
     global data_collection_process
 
     m_decode=str(msg.payload.decode("utf-8","ignore"))
@@ -144,10 +151,13 @@ def on_message(client,userdata, msg):
     print("Sensor Type: {}, House_ID: {}, Room_Type: {}".format(sensor_type, house_id, room_type))
  
     # check decoded message content and change current MLX shown
+    print("m_decode: {0}".format(m_decode))
     if m_decode == "0" and room_type == RPI_room_type:
         binary_dict[room_type] = int(m_decode)
         if data_collection_process:
             data_collection_process.terminate()
+            # print(data)
+            print("Sending data array of length: {}".format(len(data)))
             to_send = json.dumps(data)
             byte_data = to_send.encode("utf-8")
             cp.connect(broker, 9999)
@@ -155,13 +165,13 @@ def on_message(client,userdata, msg):
             cp.close()
     
             data = []
-            print("Resetted data array")
+            print("Resetted data array, now length: {}".format(len(data)))
     elif m_decode == "1" and room_type == RPI_room_type:
         binary_dict[room_type] = int(m_decode)
         # spawns parallel process to write sensor data to .npy files
         data_collection_process = Process(target=main.collect_data) 
         data_collection_process.start()
-        print("Data collection started")
+        print("Data collection started, data array length originally is: {}".format(len(data)))
     
     state_value = 0
     for x in weight_dict:
@@ -200,6 +210,7 @@ mlx = adafruit_mlx90640.MLX90640(i2c) # begin MLX90640 with I2C comm
 mlx.refresh_rate = adafruit_mlx90640.RefreshRate.REFRESH_2_HZ # set refresh 
 print("set up mlx to i2c")  
 cp = ClientProtocol()
+# global data
 data = []
 
 if True:
@@ -233,4 +244,6 @@ if True:
     except InterruptedError as e:
         if data_collection_process:
             data_collection_process.terminate()        
+    except Exception as e:
+        print(e)
 
