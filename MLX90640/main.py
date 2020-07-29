@@ -2,7 +2,7 @@ import asyncio
 import math
 import sys
 import time
-from multiprocessing import Process
+from multiprocessing import Process, Queue
 
 import numpy as np
 import paho.mqtt.client as mqtt
@@ -19,6 +19,7 @@ from socket import *
 from struct import pack
 import json
 
+import queue
 
 class ClientProtocol:
 
@@ -102,9 +103,9 @@ def interpolate_values(df):
             df[x][y] = (df[x][y + 1] + df[x + 1][y] + df[x - 1][y] + df[x][y - 1]) / 4
     return df
 
-def collect_data():
-    global data
-    print("id(data): {0}".format(id(data)))
+def collect_data(data):
+    # global data
+    # print("id(data): {0}".format(id(data)))
     frame = [0] * 768
     counter = 0
     while True:
@@ -114,16 +115,18 @@ def collect_data():
             if array.shape[0] == ARRAY_SHAPE[0] * ARRAY_SHAPE[1]:
                 df = np.reshape(array.astype(float), ARRAY_SHAPE)
                 df = interpolate_values(df)
-                data.append(df)
+                data.put(df)
+                # data.append(df)
                 print("Frame collected [{}]".format(counter))
-                print("actual length: {}".format(len(data)))
+                # print("actual length: {}".format(len(data)))
                 counter += 1
         except ValueError:
             # these happen, no biggie - retry
             print("ValueError during data collection")
             pass
         except InterruptedError:
-            print("Stopping data collection..., num frames collected: {}".format(len(data)))
+            pass
+            # print("Stopping data collection..., num frames collected: {}".format(len(data)))
     
 
 def Log2(x): 
@@ -133,8 +136,8 @@ def isPowerOfTwo(n):
     return (math.ceil(Log2(n)) == math.floor(Log2(n)))
 
 def on_message(client,userdata, msg):
-    global data
-    print("id(data): {0}".format(id(data)))
+    # global data
+    # print("id(data): {0}".format(id(data)))
     global data_collection_process
 
     m_decode=str(msg.payload.decode("utf-8","ignore"))
@@ -157,19 +160,37 @@ def on_message(client,userdata, msg):
         if data_collection_process:
             data_collection_process.terminate()
             # print(data)
-            print("Sending data array of length: {}".format(len(data)))
-            to_send = json.dumps(data)
-            byte_data = to_send.encode("utf-8")
-            cp.connect(broker, 9999)
-            cp.send_data(byte_data)
-            cp.close()
+            collected_data = []
+            while not data.empty():
+                try:
+                    collected_data.append(data.get())
+                except Exception as e:
+                    print(e)
+                    break
+            # print("Sending data array of length: {}".format(len(data)))
+            try:
+
+                print("Sending data array of length: {}".format(len(collected_data)))
+                print("type(colleced_data[0]): {0}".format(type(collected_data[0])))
+                # collected_data = analyze_centroid_displacement_history(collected_data)
+                to_send = json.dumps({'test':len(collected_data)})
+                print("pong0")
+                byte_data = to_send.encode("utf-8")
+                print("pong1")
+                cp.connect(broker, 9999)
+                print("len(byte_data): {0}".format(len(byte_data)))
+                cp.send_data(byte_data)
+                cp.close()
+            except Exception as e:
+                print(e)
     
-            data = []
-            print("Resetted data array, now length: {}".format(len(data)))
+            # data = []
+            # print("Resetted data array, now length: {}".format(len(data)))
+            print("Resetted data array, now length: {}".format(collected_data.qsize()))
     elif m_decode == "1" and room_type == RPI_room_type:
         binary_dict[room_type] = int(m_decode)
         # spawns parallel process to write sensor data to .npy files
-        data_collection_process = Process(target=main.collect_data) 
+        data_collection_process = Process(target=main.collect_data, args=(data, ))
         data_collection_process.start()
         print("Data collection started, data array length originally is: {}".format(len(data)))
     
@@ -211,7 +232,7 @@ mlx.refresh_rate = adafruit_mlx90640.RefreshRate.REFRESH_2_HZ # set refresh
 print("set up mlx to i2c")  
 cp = ClientProtocol()
 # global data
-data = []
+data = Queue()
 
 if True:
     BED_ROOM = "bedroom"
