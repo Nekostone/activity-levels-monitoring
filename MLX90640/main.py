@@ -1,10 +1,32 @@
+import asyncio
+import math
+import sys
 import time
+from multiprocessing import Process
 
 import numpy as np
+import paho.mqtt.client as mqtt
 import serial
 
-from file_utils import save_npy, create_folder_if_absent
+import adafruit_mlx90640
+import board
+import busio
+import main
+from file_utils import create_folder_if_absent, save_npy
 from visualizer import init_heatmap, update_heatmap
+
+i2c = busio.I2C(board.SCL, board.SDA, frequency=400000) # setup I2C
+mlx = adafruit_mlx90640.MLX90640(i2c) # begin MLX90640 with I2C comm
+mlx.refresh_rate = adafruit_mlx90640.RefreshRate.REFRESH_2_HZ # set refresh rate
+data = []
+
+BED_ROOM = "bedroom"
+LIVING_ROOM = "livingroom"
+KITCHEN = "kitchen"
+OUTSIDE = "outside"
+TOILET = "toilet"
+
+RPI_room_type = BED_ROOM
 
 """
 Initialization
@@ -12,16 +34,32 @@ Serial Parameters - Port, Baud Rate, Start Byte
 Program Mode - Plot (Debug) / Write Mode
 """
 
-# SERIAL_PORT = 'COM5' # for windows
-SERIAL_PORT = "/dev/ttyUSB0" # for linux
+# SERIAL_PORT = 'COM3'  # for windows
+# SERIAL_PORT = "/dev/ttyS3" # for linux
 BAUD_RATE = 115200
-ARRAY_SHAPE = (24,32)
+ARRAY_SHAPE = (24, 32)
 
-DEBUG_MODE = 0
-WRITE_MODE = 1
+DEBUG_MODE = 1
+WRITE_MODE = 0
 PUBLISH_MODE = 2
-DATA_PATH = "data/dataset_for_xavier_day1" # change as it fits 
-DATA_DIR_SORT = "day"
+broker = "192.168.2.109"
+port = 1883
+mlx_number = 0
+
+class MQTTClient:
+    def __init__(self, broker, port):
+
+        client = mqtt.Client("teck0")
+        client.on_connect = on_connect
+        client.on_disconnect = on_disconnect
+        print("connecting to broker, ", broker)
+        client.connect(broker, port)
+        self.client = client
+    def subscribe(self, topic):
+        self.client.subscribe(topic)
+        print("Subscribed to topic:", topic)
+    def send_message(self, msg, topic):
+        self.client.publish(topic, msg)
 
 def interpolate_values(df):
     """
@@ -34,80 +72,121 @@ def interpolate_values(df):
     for indx in nan_value_indices:
         x = indx[0]
         y = indx[1]
-        if x==0  and y==0 :
-            df[x][y] = (df[x+1][y]+df[x][y+1])/2 
+        if x == 0 and y == 0:
+            df[x][y] = (df[x + 1][y] + df[x][y + 1]) / 2
 
-        elif (x==x_max and y==y_max):
-            df[x][y] = (df[x-1][y]+df[x][y-1])/2
+        elif (x == x_max and y == y_max):
+            df[x][y] = (df[x - 1][y] + df[x][y - 1]) / 2
 
-        elif (x==0 and y==y_max):
-            df[x][y] = (df[x+1][y]+df[x][y-1])/2
+        elif (x == 0 and y == y_max):
+            df[x][y] = (df[x + 1][y] + df[x][y - 1]) / 2
 
-        elif (x==x_max and y==0):
-            df[x][y] = (df[x-1][y]+df[x][y+1])/2
+        elif (x == x_max and y == 0):
+            df[x][y] = (df[x - 1][y] + df[x][y + 1]) / 2
 
-        elif (x==0):
-            df[x][y] = (df[x+1][y]+df[x][y-1]+df[x][y+1])/3
+        elif (x == 0):
+            df[x][y] = (df[x + 1][y] + df[x][y - 1] + df[x][y + 1]) / 3
 
-        elif (x==x_max):
-            df[x][y] = (df[x-1][y]+df[x][y-1]+df[x][y+1])/3
+        elif (x == x_max):
+            df[x][y] = (df[x - 1][y] + df[x][y - 1] + df[x][y + 1]) / 3
 
-        elif (y==0):
-            df[x][y] = (df[x+1][y]+df[x-1][y]+df[x][y+1])/3
+        elif (y == 0):
+            df[x][y] = (df[x + 1][y] + df[x - 1][y] + df[x][y + 1]) / 3
 
-        elif (y==y_max):
-            df[x][y] = (df[x-1][y]+df[x+1][y]+df[x][y-1])/3
-        else :
-            df[x][y] = (df[x][y+1] + df[x+1][y] + df[x-1][y] + df[x][y-1]) / 4
+        elif (y == y_max):
+            df[x][y] = (df[x - 1][y] + df[x + 1][y] + df[x][y - 1]) / 3
+        else:
+            df[x][y] = (df[x][y + 1] + df[x + 1][y] + df[x - 1][y] + df[x][y - 1]) / 4
     return df
 
-def save_serial_output(forever, num_samples=3000, mode=DEBUG_MODE):
-    """
-    Save serial output from arduino 
-    """
-    ser = serial.Serial(SERIAL_PORT, BAUD_RATE)
-    ser.reset_output_buffer()
-    counter = 0
+def collect_data():
+    global data
+    mlx.getFrame(frame)  #  get the mlx values and put them into the array we just created
+    array = np.array(frame) 
+    if array.shape[0] == ARRAY_SHAPE[0] * ARRAY_SHAPE[1]:
+        df = np.reshape(array.astype(float), ARRAY_SHAPE)
+        df = interpolate_values(df)
+        data.append(df)
 
-    to_read = forever or counter < num_samples
-    plot = None
-    if mode == DEBUG_MODE:
-        min_temp = 28
-        max_temp = 40
-        plot = init_heatmap("MLX90640 Heatmap", ARRAY_SHAPE, min_temp, max_temp)
-    elif mode == WRITE_MODE:
-        create_folder_if_absent(DATA_PATH)
+def Log2(x): 
+    return (math.log10(x) / math.log10(2))
+    
+def isPowerOfTwo(n): 
+    return (math.ceil(Log2(n)) == math.floor(Log2(n)))
+
+def on_message(client,userdata, msg):
+    global mlx_number
+    global data_collection_process
+
+    m_decode=str(msg.payload.decode("utf-8","ignore"))
+    
+    # debug message
+    print("=============================")
+    print("message received!")
+    print("msg: {0}".format(m_decode))
+    
+    # check topic
+    topic=msg.topic
+    print("Topic: " + topic)
+    sensor_type, house_id, room_type = topic.split("/")
+    print("Sensor Type: {}, House_ID: {}, Room_Type: {}".format(sensor_type, house_id, room_type))
+ 
+    # check decoded message content and change current MLX shown
+    if m_decode == "0" and room_type == RPI_room_type:
+        binary_dict[room_type] = int(m_decode)
+        if data_collection_process:
+            data_collection_process.terminate()
+    elif m_decode == "1" and room_type == RPI_room_type:
+        binary_dict[room_type] = int(m_decode)
+        # spawns parallel process to write sensor data to .npy files
+        data_collection_process = Process(target=main.collect_data, args = (True,), kwargs={"mode":1,}) 
+        data_collection_process.start()
+    
+    state_value = 0
+    for x in weight_dict:
+        state_value += weight_dict[x] * binary_dict[x]
         
-    while to_read:
-        try:
-            ser_bytes = ser.readline()
-            decoded_string = ser_bytes.decode("utf-8", errors='ignore').strip("\r\n")
-            values = decoded_string.split(",")[:-1]
-            array = np.array(values)    
-            if array.shape[0] == ARRAY_SHAPE[0] * ARRAY_SHAPE[1]:
-                df = np.reshape(array.astype(float), ARRAY_SHAPE)
-                df = interpolate_values(df)
-                max_temp = np.amax(df)
-                min_temp = np.amin(df)
+    
+    if isPowerOfTwo(state_value):
+        for x in binary_dict:
+            if x == room_type:
+                binary_dict[x] = 1
+            else:
+                binary_dict[x] = 0
+    
+    print("Dictionary: ")
+    print(binary_dict)
+    print("=============================")
+ 
+def on_connect(client, userdata, flags, rc):
+    if rc == 0:
+        print ("Connection OK!")
+    else:
+        print("Bad connection, Returned Code: ", rc)
 
-                if mode == DEBUG_MODE:
-                    print("Updating Heatmap...", "[{}]".format(counter))
-                    update_heatmap(df, plot)
+def on_disconnect(client, userdata, flags, rc=0):
+    print("Disconnected result code " + str(rc))
 
-                elif mode == WRITE_MODE:
-                    print("Saving npy object...", "[{}]".format(counter))
-                    save_npy(df, DATA_PATH, directory_sort=DATA_DIR_SORT)
 
-                elif mode == PUBLISH_MODE:
-                    pass
-                
-            counter += 1
+if True:
+    weight_arr = [BED_ROOM, LIVING_ROOM, KITCHEN, OUTSIDE, TOILET]
+    weight_dict = {weight_arr[i] : 2**i for i in range(5)} 
+    binary_dict = {weight_arr[i] : 0 for i in range(5)} 
 
-        except KeyboardInterrupt:
-            raise
-        except Exception as e:
-            print(e)
-            break
+    print("Start weight dictionary:")
+    print(weight_dict)
+    
+    mqttclient = MQTTClient(broker, port)
+    mqttclient.subscribe(topic="bps/kjhouse")
+    mqttclient.subscribe(topic="bps/kjhouse/livingroom")
+    mqttclient.subscribe(topic="bps/kjhouse/bedroom")
+    mqttclient.client.on_connect = on_connect
+    mqttclient.client.on_disconnect = on_disconnect
+    mqttclient.client.on_message = on_message  # makes it so that the callback on receiving a message calls on_message() above
+    
+    try:
+        mqttclient.client.loop_forever()
+    except InterruptedError as e:
+        if data_collection_process:
+            data_collection_process.terminate()        
 
-if __name__ == "__main__":
-    save_serial_output(forever=True, mode=WRITE_MODE) 

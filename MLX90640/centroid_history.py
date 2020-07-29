@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 from background_subtraction import bs_godec, cleaned_godec_img, postprocess_img
 from file_utils import (basename, create_folder_if_absent, get_all_files,
-                        get_frame, get_frame_GREY, normalize_frame)
+                        get_frame, normalize_frame)
 
 
 def input_target_centroid_area():
@@ -200,7 +200,7 @@ def get_centroid_displacement_history(files):
     calculate displacement directly.
     
     Args:
-        files ([type]): [description]
+        files ([np.array]): [description]
         debug (bool, optional): [description]. Defaults to True.
 
     Returns:
@@ -211,7 +211,7 @@ def get_centroid_displacement_history(files):
     M, LS, L, S, width, height = bs_godec(files)
     
     for i in range(len(files)):
-        img = get_frame_GREY(files[i])
+        img = normalize_frame(files[i])
         L_frame = normalize_frame(L[:, i].reshape(width, height).T)
         S_frame = normalize_frame(S[:, i].reshape(width, height).T)
         img = cleaned_godec_img(L_frame, S_frame, get_frame(files[i]))
