@@ -62,6 +62,7 @@ def analyze_centroid_displacement_history(files, num_frames_per_iteration=1800):
             end_index = counter + num_frames_per_iteration
             print("running analysis for {} - {}".format(start_index, end_index))    
         displacement_dict = {num_interval: get_centroid_displacement_history(files[start_index:end_index])}
+        print(displacement_dict)
         analysis_results = {**analysis_results, **displacement_dict}
         counter += num_frames_per_iteration
         num_interval += 1

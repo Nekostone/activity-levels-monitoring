@@ -104,8 +104,6 @@ def interpolate_values(df):
     return df
 
 def collect_data(data):
-    # global data
-    # print("id(data): {0}".format(id(data)))
     frame = [0] * 768
     counter = 0
     while True:
@@ -116,9 +114,7 @@ def collect_data(data):
                 df = np.reshape(array.astype(float), ARRAY_SHAPE)
                 df = interpolate_values(df)
                 data.put(df)
-                # data.append(df)
                 print("Frame collected [{}]".format(counter))
-                # print("actual length: {}".format(len(data)))
                 counter += 1
         except ValueError:
             # these happen, no biggie - retry
@@ -128,13 +124,6 @@ def collect_data(data):
             pass
             # print("Stopping data collection..., num frames collected: {}".format(len(data)))
     
-
-def Log2(x): 
-    return (math.log10(x) / math.log10(2))
-    
-def isPowerOfTwo(n): 
-    return (math.ceil(Log2(n)) == math.floor(Log2(n)))
-
 def on_message(client,userdata, msg):
     # global data
     # print("id(data): {0}".format(id(data)))
@@ -159,7 +148,6 @@ def on_message(client,userdata, msg):
         binary_dict[room_type] = int(m_decode)
         if data_collection_process:
             data_collection_process.terminate()
-            # print(data)
             collected_data = []
             while not data.empty():
                 try:
@@ -171,12 +159,15 @@ def on_message(client,userdata, msg):
             try:
 
                 print("Sending data array of length: {}".format(len(collected_data)))
-                print("type(colleced_data[0]): {0}".format(type(collected_data[0])))
                 # collected_data = analyze_centroid_displacement_history(collected_data)
-                to_send = json.dumps({'test':len(collected_data)})
-                print("pong0")
+                start_time = time.strftime("%Y.%m.%d_%H%M%S",time.localtime(time.time()))
+                analysis_result = analyze_centroid_displacement_history(collected_data, input_type="npframes", start_time=start_time)
+                print(type(analysis_result))
+                print(analysis_result)
+                to_send = json.dumps(analysis_result)
+                mqttclient.send_message(to_send, "/".join("Rpi", house_id, RPI_room_type))
+                #to_send = json.dumps({'test':len(collected_data)})
                 byte_data = to_send.encode("utf-8")
-                print("pong1")
                 cp.connect(broker, 9999)
                 print("len(byte_data): {0}".format(len(byte_data)))
                 cp.send_data(byte_data)
@@ -192,24 +183,7 @@ def on_message(client,userdata, msg):
         # spawns parallel process to write sensor data to .npy files
         data_collection_process = Process(target=main.collect_data, args=(data, ))
         data_collection_process.start()
-        print("Data collection started, data array length originally is: {}".format(len(data)))
     
-    state_value = 0
-    for x in weight_dict:
-        state_value += weight_dict[x] * binary_dict[x]
-        
-    
-    if isPowerOfTwo(state_value):
-        for x in binary_dict:
-            if x == room_type:
-                binary_dict[x] = 1
-            else:
-                binary_dict[x] = 0
-    
-    print("Dictionary: ")
-    print(binary_dict)
-    print("=============================")
- 
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
         print ("Connection OK!")
@@ -223,7 +197,7 @@ def on_disconnect(client, userdata, flags, rc=0):
 BAUD_RATE = 115200
 ARRAY_SHAPE = (24, 32)
 
-broker = "192.168.0.102"
+broker = "13.229.212.221"
 port = 1883
 
 i2c = busio.I2C(board.SCL, board.SDA, frequency=400000) # setup I2C

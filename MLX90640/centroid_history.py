@@ -185,7 +185,7 @@ def get_centroid_area_history(files, debug=True, key_format="simple"):
         return area_counter, area_movement_counter, centroid_area_array, annotated_images
     return area_movement_counter
 
-def get_centroid_displacement_history(files):
+def get_centroid_displacement_history(files, input_type="filenames", start_time=""):
     """
     Primary function for getting history of the following format:   
     {
@@ -209,7 +209,6 @@ def get_centroid_displacement_history(files):
     annotated_images = []
     centroid_history = []
     M, LS, L, S, width, height = bs_godec(files)
-    
     for i in range(len(files)):
         img = normalize_frame(files[i])
         L_frame = normalize_frame(L[:, i].reshape(width, height).T)
@@ -233,10 +232,16 @@ def get_centroid_displacement_history(files):
             curr_displacement = np.sqrt((prev_centroid[0]-curr_centroid[0])**2 + (prev_centroid[1]-curr_centroid[1])**2)
             displacements.append(curr_displacement)
     
-    startTime = basename(files[0])
-    endTime = basename(files[-1])
+    if input_type == "filenames":
+        startTime = basename(files[0])
+        endTime = basename(files[-1])
+    elif input_type == "npframes":
+        startTime = start_time
+        endTime = time.strftime("%Y.%m.%d_%H%M%S",time.localtime(time.time()))
+    else:
+        raise Error("invalid input type to get centroid displacement history")
+  
     timeElapsed = datetime.strptime(endTime, "%Y.%m.%d_%H%M%S") - datetime.strptime(startTime, "%Y.%m.%d_%H%M%S")
-    
             
     return {"start": basename(files[0]),
             "end": basename(files[-1]),
