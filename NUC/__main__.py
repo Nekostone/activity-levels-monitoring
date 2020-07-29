@@ -24,33 +24,6 @@ def on_connect(client, userdata, flags, rc):
 def on_disconnect(client, userdata, flags, rc=0):
     print("Disconnected result code " + str(rc))
 
-def on_message(client,userdata, msg):
-    topic=msg.topic
-    
-    # print("=============================") # debug message
-    # print("message received!")
-    m_decode=str(msg.payload.decode("utf-8","ignore"))
-    # print("msg: {0}".format(m_decode))
-    
-    device_type, house_id, room_type = topic.split("/")
-    # print("Device Type: {}, House_ID: {}, Room_Type: {}".format(device_type, house_id, room_type))
-
-
-    if m_decode == "0" or m_decode == "1":
-        binary_dict[room_type] = int(m_decode)
-        state_value = 0
-        for x in weight_dict:
-            state_value += weight_dict[x] * binary_dict[x]
-        if isPowerOfTwo(state_value):
-            for x in binary_dict:
-                if x == room_type:
-                    binary_dict[x] = 1
-                else:
-                    binary_dict[x] = 0
-        print(binary_dict)
-    print("=============================")
-    
-    
 def send_msg_if_room_changed(state_value: int, last: str, topic: str, state_machine):
     if state_value == 1:
         new = 'bedroom'
@@ -97,6 +70,43 @@ def send_msg_if_room_changed(state_value: int, last: str, topic: str, state_mach
     last = new
     return last, True
 
+def on_message(client,userdata, msg):
+    topic=msg.topic
+    
+    # print("=============================") # debug message
+    # print("message received!")
+    m_decode=str(msg.payload.decode("utf-8","ignore"))
+    # print("msg: {0}".format(m_decode))
+    
+    device_type, house_id, room_type = topic.split("/")
+    # print("Device Type: {}, House_ID: {}, Room_Type: {}".format(device_type, house_id, room_type))
+
+
+    if m_decode == "0" or m_decode == "1":
+        binary_dict[room_type] = int(m_decode)
+        state_value = 0
+        for x in weight_dict:
+            state_value += weight_dict[x] * binary_dict[x]
+        if isPowerOfTwo(state_value):
+            for x in binary_dict:
+                if x == room_type:
+                    binary_dict[x] = 1
+                else:
+                    binary_dict[x] = 0
+        print(binary_dict)
+    print("=============================")
+    
+    val = 0
+    print(binary_dict)
+    for room in weight_arr:
+        val = val + int(binary_dict[room])*int(weight_dict[room])
+    
+    try:
+        last_visited, room_changed = send_msg_if_room_changed(x, last_visited, topic, state_machine)
+        # print(state_machine.current_state.name)
+    except ValueError:
+        print("Invalid string")
+
 # MQTT Setup
 client_name = "swcannotconnecthalp" 
 client = mqtt.Client(client_name)
@@ -139,15 +149,5 @@ weight_arr = [BED_ROOM, LIVING_ROOM, KITCHEN, OUTSIDE, TOILET]
 weight_dict = {weight_arr[i] : 2**i for i in range(5)} 
 binary_dict = {weight_arr[i] : 0 for i in range(5)}
 
-
 while True:
-    x = 0
     print(binary_dict)
-    for room in weight_arr:
-        x = x + int(binary_dict[room])*int(weight_dict[room])
-    print(x)
-    try:
-        last_visited, room_changed = send_msg_if_room_changed(x, last_visited, topic, state_machine)
-        # print(state_machine.current_state.name)
-    except ValueError:
-        print("Invalid string")
