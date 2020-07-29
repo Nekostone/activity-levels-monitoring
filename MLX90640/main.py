@@ -14,37 +14,39 @@ import busio
 import main
 from file_utils import create_folder_if_absent, save_npy
 from visualizer import init_heatmap, update_heatmap
+from presence_detection import analyze_centroid_displacement_history
+from socket import *
+from struct import pack
+import json
 
-i2c = busio.I2C(board.SCL, board.SDA, frequency=400000) # setup I2C
-mlx = adafruit_mlx90640.MLX90640(i2c) # begin MLX90640 with I2C comm
-mlx.refresh_rate = adafruit_mlx90640.RefreshRate.REFRESH_2_HZ # set refresh rate
-data = []
+class ClientProtocol:
 
-BED_ROOM = "bedroom"
-LIVING_ROOM = "livingroom"
-KITCHEN = "kitchen"
-OUTSIDE = "outside"
-TOILET = "toilet"
+    def __init__(self):
+        self.socket = None
 
-RPI_room_type = BED_ROOM
+    def connect(self, server_ip, server_port):
+        self.socket = socket(AF_INET, SOCK_STREAM)
+        self.socket.connect((server_ip, server_port))
+        print("Connected to TCP Server")
 
-"""
-Initialization
-Serial Parameters - Port, Baud Rate, Start Byte
-Program Mode - Plot (Debug) / Write Mode
-"""
+    def close(self):
+        self.socket.shutdown(SHUT_WR)
+        self.socket.close()
+        self.socket = None
 
-# SERIAL_PORT = 'COM3'  # for windows
-# SERIAL_PORT = "/dev/ttyS3" # for linux
-BAUD_RATE = 115200
-ARRAY_SHAPE = (24, 32)
+    def send_data(self, data):
 
-DEBUG_MODE = 1
-WRITE_MODE = 0
-PUBLISH_MODE = 2
-broker = "192.168.2.109"
-port = 1883
-mlx_number = 0
+        # use struct to make sure we have a consistent endianness on the length
+        length = pack('>Q', len(data))
+
+        # sendall to make sure it blocks if there's back-pressure on the socket
+        self.socket.sendall(length)
+        self.socket.sendall(data)
+
+        ack = self.socket.recv(1)
+
+        # could handle a bad ack here, but we'll assume it's fine.
+
 
 class MQTTClient:
     def __init__(self, broker, port):
@@ -101,6 +103,7 @@ def interpolate_values(df):
 
 def collect_data():
     global data
+    frame = np.array((24*32))
     mlx.getFrame(frame)  #  get the mlx values and put them into the array we just created
     array = np.array(frame) 
     if array.shape[0] == ARRAY_SHAPE[0] * ARRAY_SHAPE[1]:
@@ -115,7 +118,7 @@ def isPowerOfTwo(n):
     return (math.ceil(Log2(n)) == math.floor(Log2(n)))
 
 def on_message(client,userdata, msg):
-    global mlx_number
+    global data
     global data_collection_process
 
     m_decode=str(msg.payload.decode("utf-8","ignore"))
@@ -136,11 +139,20 @@ def on_message(client,userdata, msg):
         binary_dict[room_type] = int(m_decode)
         if data_collection_process:
             data_collection_process.terminate()
+            data = json.dumps(data)
+            byte_data = data.encode("utf-8")
+            cp.connect(broker, 9999)
+            cp.send_data(byte_data)
+            cp.close()
+    
+            data = []
+            print("Data collection stopped")
     elif m_decode == "1" and room_type == RPI_room_type:
         binary_dict[room_type] = int(m_decode)
         # spawns parallel process to write sensor data to .npy files
-        data_collection_process = Process(target=main.collect_data, args = (True,), kwargs={"mode":1,}) 
+        data_collection_process = Process(target=main.collect_data) 
         data_collection_process.start()
+        print("Data collection started")
     
     state_value = 0
     for x in weight_dict:
@@ -168,18 +180,44 @@ def on_disconnect(client, userdata, flags, rc=0):
     print("Disconnected result code " + str(rc))
 
 
+BAUD_RATE = 115200
+ARRAY_SHAPE = (24, 32)
+
+broker = "192.168.0.102"
+port = 1883
+
+i2c = busio.I2C(board.SCL, board.SDA, frequency=400000) # setup I2C
+mlx = adafruit_mlx90640.MLX90640(i2c) # begin MLX90640 with I2C comm
+mlx.refresh_rate = adafruit_mlx90640.RefreshRate.REFRESH_2_HZ # set refresh 
+print("set up mlx to i2c")  
+cp = ClientProtocol()
+data = []
+
 if True:
+    
+
+
+    BED_ROOM = "bedroom"
+    LIVING_ROOM = "livingroom"
+    KITCHEN = "kitchen"
+    OUTSIDE = "outside"
+    TOILET = "toilet"
+
+    RPI_room_type = BED_ROOM
     weight_arr = [BED_ROOM, LIVING_ROOM, KITCHEN, OUTSIDE, TOILET]
     weight_dict = {weight_arr[i] : 2**i for i in range(5)} 
     binary_dict = {weight_arr[i] : 0 for i in range(5)} 
 
     print("Start weight dictionary:")
     print(weight_dict)
-    
-    mqttclient = MQTTClient(broker, port)
-    mqttclient.subscribe(topic="bps/kjhouse")
-    mqttclient.subscribe(topic="bps/kjhouse/livingroom")
-    mqttclient.subscribe(topic="bps/kjhouse/bedroom")
+
+    try: 
+        mqttclient = MQTTClient(broker, port)
+        mqttclient.subscribe(topic="bps/kjhouse")
+        mqttclient.subscribe(topic="bps/kjhouse/livingroom")
+        mqttclient.subscribe(topic="bps/kjhouse/bedroom")
+    except Exception as e:
+        print(e)
     mqttclient.client.on_connect = on_connect
     mqttclient.client.on_disconnect = on_disconnect
     mqttclient.client.on_message = on_message  # makes it so that the callback on receiving a message calls on_message() above
