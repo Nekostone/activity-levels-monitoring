@@ -139,8 +139,8 @@ def on_message(client,userdata, msg):
         binary_dict[room_type] = int(m_decode)
         if data_collection_process:
             data_collection_process.terminate()
-            data = json.dumps(data)
-            byte_data = data.encode("utf-8")
+            to_send = json.dumps(data)
+            byte_data = to_send.encode("utf-8")
             cp.connect(broker, 9999)
             cp.send_data(byte_data)
             cp.close()
