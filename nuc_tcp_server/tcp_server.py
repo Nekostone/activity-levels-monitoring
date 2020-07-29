@@ -1,9 +1,7 @@
 import os
 from socket import *
 from struct import unpack
-import pickle
-import numpy as np
-
+import json
 
 class ServerProtocol:
 
@@ -29,7 +27,6 @@ class ServerProtocol:
                         to_read = length - len(data)
                         received_data = connection.recv(
                             4096 if to_read > 4096 else to_read)
-                        print("received_data: {0}".format(received_data))
                         data += received_data
 
                     # send our 0 ack
@@ -39,18 +36,14 @@ class ServerProtocol:
                     connection.shutdown(SHUT_WR)
                     connection.close()
 
-                """
-                with open(os.path.join(
-                        self.output_dir, 'tempi{0}'.format(self.file_num)), 'wb'
-                ) as fp:
-                    fp.write(data)
-                """
-                received_arr = pickle.loads(data)
-                print("received_array: {0}".format(received_arr))
-                print("type(received_array): {0}".format(type(received_arr)))
+                decoded_data = data.decode("utf-8")
+                received_json = json.loads(decoded_data)
+                print("received_json: {0}".format(received_json))
+                print("type(received_json): {0}".format(type(received_json)))
 
                 self.file_num += 1
         finally:
+            print("closing port...")
             self.close()
 
     def close(self):

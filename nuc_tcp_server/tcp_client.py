@@ -1,8 +1,6 @@
 from socket import *
 from struct import pack
-import pickle
-import numpy as np
-
+import json
 
 class ClientProtocol:
 
@@ -33,16 +31,11 @@ class ClientProtocol:
 
 if __name__ == '__main__':
     cp = ClientProtocol()
-
-    data = None
-    data = np.array([[1,2,3],[4,5,6],[7,8,9]])
-    data = pickle.dumps(data)
-    """
-    with open('/home/catstone/Desktop/to_send.txt', 'rb') as fp:
-        data = fp.read()
-
-    assert(len(data))
-    """
-    cp.connect('192.168.2.109', 9999)
-    cp.send_data(data)
+    data = {"one": 1, "two": "2", "three": [{"three?": "three!"}]}
+    data = json.dumps(data)
+    byte_data = data.encode("utf-8")
+    print("len(data): {0}".format(len(data)))
+    # cp.connect('192.168.2.109', 9999)
+    cp.connect('127.0.0.1', 9999)
+    cp.send_data(byte_data)
     cp.close()
