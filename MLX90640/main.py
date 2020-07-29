@@ -103,13 +103,18 @@ def interpolate_values(df):
 
 def collect_data():
     global data
-    frame = np.array((24*32))
-    mlx.getFrame(frame)  #  get the mlx values and put them into the array we just created
-    array = np.array(frame) 
-    if array.shape[0] == ARRAY_SHAPE[0] * ARRAY_SHAPE[1]:
-        df = np.reshape(array.astype(float), ARRAY_SHAPE)
-        df = interpolate_values(df)
-        data.append(df)
+    frame = [0] * 768
+    try:
+        mlx.getFrame(frame)  #  get the mlx values and put them into the array we just created
+        array = np.array(frame) 
+        if array.shape[0] == ARRAY_SHAPE[0] * ARRAY_SHAPE[1]:
+            df = np.reshape(array.astype(float), ARRAY_SHAPE)
+            df = interpolate_values(df)
+            data.append(df)
+    except ValueError:
+        # these happen, no biggie - retry
+        print("ValueError during data collection")
+        pass
 
 def Log2(x): 
     return (math.log10(x) / math.log10(2))
