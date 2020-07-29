@@ -126,11 +126,6 @@ def save_serial_output(ser, counter, plot, mlx_number=0):
     except Exception as e:
         print(e)
         
-def Log2(x): 
-    return (math.log10(x) / math.log10(2))
-    
-def isPowerOfTwo(n): 
-    return (math.ceil(Log2(n)) == math.floor(Log2(n)))
 
 def on_message(client,userdata, msg):
     global mlx_number

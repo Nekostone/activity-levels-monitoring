@@ -5,9 +5,14 @@ import serial
 
 from RoomMonitor import RoomMonitor, LIVING_ROOM, BED_ROOM, KITCHEN, TOILET, OUTSIDE
 
-
 def bitfield(n):
     return [1 if digit=='1' else 0 for digit in bin(n)[2:]]
+
+def Log2(x): 
+    return (math.log10(x) / math.log10(2))
+    
+def isPowerOfTwo(n): 
+    return (math.ceil(Log2(n)) == math.floor(Log2(n)))
 
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
@@ -20,19 +25,41 @@ def on_disconnect(client, userdata, flags, rc=0):
 
 def on_message(client,userdata, msg):
     topic=msg.topic
-    m_decode=str(msg.payload.decode("utf-8","ignore"))
-    print("message received! =>", m_decode)
     
-def send_msg_if_room_changed(serial_output: int, last: str, topic: str, state_machine):
-    if serial_output == 1:
+    print("=============================") # debug message
+    print("message received!")
+    m_decode=str(msg.payload.decode("utf-8","ignore"))
+    print("msg: {0}".format(m_decode))
+    
+    device_type, house_id, room_type = topic.split("/")
+    print("Device Type: {}, House_ID: {}, Room_Type: {}".format(device_type, house_id, room_type))
+
+
+    if m_decode == "0" or m_decode == "1":
+        binary_dict[room_type] = int(m_decode)
+        state_value = 0
+        for x in weight_dict:
+            state_value += weight_dict[x] * binary_dict[x]
+        if isPowerOfTwo(state_value):
+            for x in binary_dict:
+                if x == room_type:
+                    binary_dict[x] = 1
+                else:
+                    binary_dict[x] = 0
+        print(binary_dict)
+    print("=============================")
+    
+    
+def send_msg_if_room_changed(state_value: int, last: str, topic: str, state_machine):
+    if state_value == 1:
         new = 'Bedroom'
-    elif serial_output == 2:
+    elif state_value == 2:
         new = 'Living Room'
-    elif serial_output == 4:
+    elif state_value == 4:
         new = 'Kitchen'
-    elif serial_output == 8:
+    elif state_value == 8:
         new = 'Toilet'
-    elif serial_output == 16:
+    elif state_value == 16:
         new = 'Not home'
     else:
         return last, False
@@ -76,32 +103,33 @@ print("Connecting to broker...", BROKER)
 client.connect(BROKER, PORT)
 client.loop_start()
 
-# Subscribe to topic
-SENSOR_TYPE = "bps"
-HOUSE_ID = "kjhaus"
-ROOMTYPE = BED_ROOM
-topic = "/".join([SENSOR_TYPE, HOUSE_ID, ROOMTYPE])
-print("Subscribing to ", topic)
-client.subscribe(topic)
+# Subscribe to topics
+HOUSE_ID = "kjhouse"
+DEVICE_TYPE = "NUC"
+sensors = ["bps", "mlx"]
+topics = [LIVING_ROOM, BED_ROOM, OUTSIDE, TOILET, KITCHEN]
 
-client.publish(topic, "test intro")
+for sensor in sensors:
+    for topic in topics:
+        print("Subscribing to ", topic)
+        client.subscribe("/".join(sensor, HOUSE_ID, topic))
+
+client.publish("/".join(DEVICE_TYPE, HOUSE_ID, topic), "Started NUC!")
 
 # State Machine and monitoring setup
 state_machine  = RoomMonitor()
 print("original state :", state_machine.current_state)
-ser = serial.Serial('COM11', 57600)
 initial_room = state_machine.current_state.name
 last_visited = initial_room
 
-if __name__ == "__main__":
-    print("Monitoring Presence...")
-    while True:
-        val = ser.readline()
-        x   = val.decode('utf-8', errors="ignore").strip()
-        try:
-            x = int(x)
-            # Room presence values given as bit vector ['Bedroom', 'Living Room']
-            last_visited, room_changed = send_msg_if_room_changed(x, last_visited, topic, state_machine)
-            
-        except ValueError:
-            print("Invalid string")
+print("Monitoring Presence...")
+weight_arr = [BED_ROOM, LIVING_ROOM, KITCHEN, OUTSIDE, TOILET]
+weight_dict = {weight_arr[i] : 2**i for i in range(5)} 
+binary_dict = {weight_arr[i] : 0 for i in range(5)}
+    
+while True:
+    try:
+        last_visited, room_changed = send_msg_if_room_changed(x, last_visited, topic, state_machine)
+        
+    except ValueError:
+        print("Invalid string")
