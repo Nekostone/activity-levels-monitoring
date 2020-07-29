@@ -213,14 +213,13 @@ def displacement_history(files, start_time, end_time):
         img = normalize_frame(files[i])
         L_frame = normalize_frame(L[:, i].reshape(width, height).T)
         S_frame = normalize_frame(S[:, i].reshape(width, height).T)
-        img = cleaned_godec_img(L_frame, S_frame, get_frame(files[i]))
+        img = cleaned_godec_img(L_frame, S_frame, files[i])
         images, centroids = postprocess_img(img)
         
         annotated_img = images[-1]
         annotated_images.append(annotated_img)
         
         append_centroid_history(centroids, i, centroid_history)
-    
     interpolated_centroid_history = Interpolator(centroid_history).history
     displacements = []
     numFrames = len(interpolated_centroid_history)
@@ -231,10 +230,12 @@ def displacement_history(files, start_time, end_time):
             curr_displacement = np.sqrt((prev_centroid[0]-curr_centroid[0])**2 + (prev_centroid[1]-curr_centroid[1])**2)
             displacements.append(curr_displacement)
     
-    timeElapsed = datetime.strptime(endTime, "%Y.%m.%d_%H%M%S") - datetime.strptime(startTime, "%Y.%m.%d_%H%M%S")
-            
-    return {"start": basename(files[0]),
-            "end": basename(files[-1]),
+
+
+    timeElapsed = datetime.strptime(end_time, "%Y.%m.%d_%H%M%S") - datetime.strptime(start_time, "%Y.%m.%d_%H%M%S")
+    print(timeElapsed.total_seconds())        
+    return {"start": start_time,
+            "end": end_time,
             "timeElapsedInSeconds": timeElapsed.total_seconds(),
             "numFrames": numFrames,
             "frames": displacements,

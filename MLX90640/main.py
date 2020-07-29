@@ -14,7 +14,7 @@ import busio
 import main
 from file_utils import create_folder_if_absent, save_npy
 from visualizer import init_heatmap, update_heatmap
-from centroid_history import get_centroid
+from centroid_history import displacement_history
 from socket import *
 from struct import pack
 import json
@@ -63,6 +63,7 @@ class MQTTClient:
         self.client.subscribe(topic)
         print("Subscribed to topic:", topic)
     def send_message(self, msg, topic):
+        print("publishing message to: {}".format(topic))
         self.client.publish(topic, msg)
 
 def interpolate_values(df):
@@ -103,7 +104,7 @@ def interpolate_values(df):
             df[x][y] = (df[x][y + 1] + df[x + 1][y] + df[x - 1][y] + df[x][y - 1]) / 4
     return df
 
-def collect_data(data):
+def collect_data(data, start_time):
     frame = [0] * 768
     counter = 0
     while True:
@@ -125,15 +126,13 @@ def collect_data(data):
             # print("Stopping data collection..., num frames collected: {}".format(len(data)))
     
 def on_message(client,userdata, msg):
-    # global data
-    # print("id(data): {0}".format(id(data)))
     global data_collection_process
 
     m_decode=str(msg.payload.decode("utf-8","ignore"))
     
     # debug message
     print("=============================")
-    print("message received!")
+    print("message received for {}!".format(RPI_room_type))
     print("msg: {0}".format(m_decode))
     
     # check topic
@@ -143,9 +142,7 @@ def on_message(client,userdata, msg):
     print("Sensor Type: {}, House_ID: {}, Room_Type: {}".format(sensor_type, house_id, room_type))
  
     # check decoded message content and change current MLX shown
-    print("m_decode: {0}".format(m_decode))
     if m_decode == "0" and room_type == RPI_room_type:
-        binary_dict[room_type] = int(m_decode)
         if data_collection_process:
             data_collection_process.terminate()
             end_time = time.strftime("%Y.%m.%d_%H%M%S",time.localtime(time.time()))
@@ -158,14 +155,13 @@ def on_message(client,userdata, msg):
                     break
             # print("Sending data array of length: {}".format(len(data)))
             try:
-
-                print("Sending data array of length: {}".format(len(collected_data)))
-                analysis_result = centroid_history(collected_data, start_time, end_time)
+                start_time = data_times.get()
+                print("Data collection started at {}, and ended at {}".format(start_time,end_time))
+                analysis_result = displacement_history(collected_data, start_time, end_time)
                 print(analysis_result)
                 to_send = json.dumps(analysis_result)
                 
                 #to_send = json.dumps({'test':len(collected_data)})
-                mqttclient.send_message(to_send, "/".join("Rpi", house_id, RPI_room_type))
                 byte_data = to_send.encode("utf-8")
                 cp.connect(broker, 9999)
                 print("len(byte_data): {0}".format(len(byte_data)))
@@ -177,15 +173,13 @@ def on_message(client,userdata, msg):
             except Exception as e:
                 print(e)
     
-            # data = []
-            # print("Resetted data array, now length: {}".format(len(data)))
             print("Resetted data array, now length: {}".format(collected_data.qsize()))
     elif m_decode == "1" and room_type == RPI_room_type:
-        binary_dict[room_type] = int(m_decode)
         # spawns parallel process to write sensor data to .npy files
-        data_collection_process = Process(target=main.collect_data, args=(data, ))
-        data_collection_process.start()
         start_time = time.strftime("%Y.%m.%d_%H%M%S",time.localtime(time.time()))
+        data_times.put(start_time)
+        data_collection_process = Process(target=main.collect_data, args=(data, data_times))
+        data_collection_process.start()
     
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
@@ -208,36 +202,22 @@ mlx = adafruit_mlx90640.MLX90640(i2c) # begin MLX90640 with I2C comm
 mlx.refresh_rate = adafruit_mlx90640.RefreshRate.REFRESH_2_HZ # set refresh 
 print("set up mlx to i2c")  
 cp = ClientProtocol()
-# global data
 data = Queue()
+data_times = Queue()
 
 if True:
-    BED_ROOM = "bedroom"
-    LIVING_ROOM = "livingroom"
-    KITCHEN = "kitchen"
-    OUTSIDE = "outside"
-    TOILET = "toilet"
-
-    RPI_room_type = BED_ROOM
-    weight_arr = [BED_ROOM, LIVING_ROOM, KITCHEN, OUTSIDE, TOILET]
-    weight_dict = {weight_arr[i] : 2**i for i in range(5)} 
-    binary_dict = {weight_arr[i] : 0 for i in range(5)} 
-
-    print("Start weight dictionary:")
-    print(weight_dict)
-
     try: 
         mqttclient = MQTTClient(broker, port)
-        mqttclient.subscribe(topic="bps/kjhouse")
-        mqttclient.subscribe(topic="bps/kjhouse/livingroom")
-        mqttclient.subscribe(topic="bps/kjhouse/bedroom")
+        mqttclient.subscribe(topic="NUC/kjhouse/bedroom")
     except Exception as e:
         print(e)
+    RPI_room_type = "bedroom"
     mqttclient.client.on_connect = on_connect
     mqttclient.client.on_disconnect = on_disconnect
     mqttclient.client.on_message = on_message  # makes it so that the callback on receiving a message calls on_message() above
     
     try:
+        mqttclient.client.publish("/".join(["Rpi", "kjhouse", RPI_room_type]), "Rpi operational!")
         mqttclient.client.loop_forever()
     except InterruptedError as e:
         if data_collection_process:
