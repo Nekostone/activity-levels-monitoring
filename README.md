@@ -8,6 +8,7 @@
 **Table of Contents**
 - [Introduction to the Project](#introduction-to-the-project)
 - [Progress](#progress)
+- [Device Requirements](#device-requirements)
 - [Setup instructions for this repo](#setup-instructions-for-this-repo)
 
 ## Introduction to the Project
@@ -50,10 +51,22 @@ Background Subtraction Pipeline (Review 3)
 
 <img src="screenshots/bs_pipeline.gif">
 
-> Credits to [Andrews Sobral](https://github.com/andrewssobral/godec) for a GoDec Python Implementation and [OpenCV](https://opencv.org/) for computer vision API. We experimented a lot with the different functions and parameters available before achieving this result.
+> Credits to [Andrews Sobral](https://github.com/andrewssobral/godec) for a GoDec Python Implementation and [OpenCV](https://opencv.org/) for computer vision API. We experimented a lot with the different functions and parameters available before achieving this r
 
 </details>
 
+## Device Requirements
+
+The Activity Levels Monitoring subsystem (as of Review 4) require the following devices:
+- MLX90640
+- RPI 3b
+- NUC / Central Processor
+  
+
+> For instructions on older sensors that we have experimented with, refer [here](Archived/SETUP.md).
+
 ## Setup instructions for this repo
 
-Refer [here](SETUP.md)
+- For general testing with the MLX90640, refer to [MLX_SETUP.md](MLX_SETUP.md)
+- For setting up the RPI, refer to [RPI_SETUP.md](RPI_SETUP.md)
+- For setting up the NUC, refer to [NUC_SETUP.md](NUC_SETUP.md)
