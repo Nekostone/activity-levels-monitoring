@@ -102,11 +102,52 @@ Here is a screenshot from the documentation of the more important commands that 
 
 If used as a standalone board, can wire to arduino and short the reset and ground pins on the arduino. Remember to remove the short if flashing arduino sketches.
 
-## Install necessary packages
+## Install necessary packages and dependencies
+Before installing anything else, first install the following dependencies:
 
+For opencv:
+```python
+sudo apt install libatlas3-base libwebp6 libtiff5 libjasper1 libilmbase23 libopenexr23 libavcodec58 libavformat58 libavutil56 libswscale5 libgtk-3-0 libpangocairo-1.0-0 libpango-1.0-0 libatk1.0-0 libcairo-gobject2 libcairo2 libgdk-pixbuf2.0-0 libqtgui4 libqt4-test libqtcore4
+```
+
+For the I2C connection with MLX90640:
+```python
+sudo apt-get install -y python-smbus
+sudo apt-get install -y i2c-tools
+```
+
+You also will need to enable I2C on the RPI by executing:
+```commandline
+sudo nano /boot/config.txt
+``` 
+and uncommenting 
+```editorconfig
+dtparam=i2c_arm=on
+```
+by removing the # before it.
+
+Next, create a venv and execute the following:
+```python
+pip install numpy cython
+```
+Installing scipy is a bit more involved:
+1. Download the latest scipy wheels from http://www.piwheels.org/simple/scipy
+2. In the activated venv, navigate to the folder with the wheel file and execute:
+```python
+pip install <the-wheel-file-you-downloaded.whl>
+```
+
+The other packages can be installed using:
 ```python
 pip install -r requirements.txt
 ```
+
+Don't forget to reboot after installing! You can check that I2C is enabled by executing
+```commandline
+sudo i2cdetect -y 1
+```
+You should see this:
+![](screenshots/i2c_detect_mlx90640.png)
 
 ### Common Issues
 
