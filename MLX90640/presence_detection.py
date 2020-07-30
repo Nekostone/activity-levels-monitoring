@@ -4,7 +4,7 @@ from collections import Counter, defaultdict
 from json_to_timedict import json_to_timedict
 import numpy as np
 
-from centroid_history import get_centroid_area_history, get_centroid_displacement_history
+from centroid_history import get_centroid_area_history, displacement_history
 from file_utils import basename
 
 
@@ -60,8 +60,10 @@ def analyze_centroid_displacement_history(files, num_frames_per_iteration=1800):
             end_index = total_frames
         else:
             end_index = counter + num_frames_per_iteration
-            print("running analysis for {} - {}".format(start_index, end_index))    
-        displacement_dict = {num_interval: get_centroid_displacement_history(files[start_index:end_index])}
+            print("running analysis for {} - {}".format(start_index, end_index))   
+        startTime = basename(files[start_index])
+        endTime = basename(files[end_index])
+        displacement_dict = {num_interval: displacement_history(files[start_index:end_index], startTime, endTime)}
         analysis_results = {**analysis_results, **displacement_dict}
         counter += num_frames_per_iteration
         num_interval += 1

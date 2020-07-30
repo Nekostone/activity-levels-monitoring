@@ -2,7 +2,8 @@ import copy
 import math
 import os
 from collections import Counter, defaultdict
-#from bokeh.plotting import curdoc, figure
+from datetime import datetime
+
 import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime
@@ -10,7 +11,7 @@ from tqdm import tqdm
 
 from background_subtraction import bs_godec, cleaned_godec_img, postprocess_img
 from file_utils import (basename, create_folder_if_absent, get_all_files,
-                        get_frame, get_frame_GREY, normalize_frame)
+                        get_frame, normalize_frame)
 
 
 def input_target_centroid_area():
@@ -185,7 +186,7 @@ def get_centroid_area_history(files, debug=True, key_format="simple"):
         return area_counter, area_movement_counter, centroid_area_array, annotated_images
     return area_movement_counter
 
-def get_centroid_displacement_history(files):
+def displacement_history(files, start_time, end_time):
     """
     Primary function for getting history of the following format:   
     {
@@ -200,7 +201,7 @@ def get_centroid_displacement_history(files):
     calculate displacement directly.
     
     Args:
-        files ([type]): [description]
+        files ([np.array]): [description]
         debug (bool, optional): [description]. Defaults to True.
 
     Returns:
@@ -209,21 +210,18 @@ def get_centroid_displacement_history(files):
     annotated_images = []
     centroid_history = []
     M, LS, L, S, width, height = bs_godec(files)
-    
     for i in range(len(files)):
-        img = get_frame_GREY(files[i])
+        img = normalize_frame(files[i])
         L_frame = normalize_frame(L[:, i].reshape(width, height).T)
         S_frame = normalize_frame(S[:, i].reshape(width, height).T)
-        img = cleaned_godec_img(L_frame, S_frame, get_frame(files[i]))
+        img = cleaned_godec_img(L_frame, S_frame, files[i])
         images, centroids = postprocess_img(img)
         
         annotated_img = images[-1]
         annotated_images.append(annotated_img)
         
         append_centroid_history(centroids, i, centroid_history)
-    
     interpolated_centroid_history = Interpolator(centroid_history).history
-        
     displacements = []
     numFrames = len(interpolated_centroid_history)
     for i in range(numFrames - 1):
@@ -233,13 +231,12 @@ def get_centroid_displacement_history(files):
             curr_displacement = np.sqrt((prev_centroid[0]-curr_centroid[0])**2 + (prev_centroid[1]-curr_centroid[1])**2)
             displacements.append(curr_displacement)
     
-    startTime = basename(files[0])
-    endTime = basename(files[-1])
-    timeElapsed = datetime.strptime(endTime, "%Y.%m.%d_%H%M%S") - datetime.strptime(startTime, "%Y.%m.%d_%H%M%S")
-    
-            
-    return {"start": basename(files[0]),
-            "end": basename(files[-1]),
+
+
+    timeElapsed = datetime.strptime(end_time, "%Y.%m.%d_%H%M%S") - datetime.strptime(start_time, "%Y.%m.%d_%H%M%S")
+    print(timeElapsed.total_seconds())        
+    return {"start": start_time,
+            "end": end_time,
             "timeElapsedInSeconds": timeElapsed.total_seconds(),
             "numFrames": numFrames,
             "frames": displacements,

@@ -1,9 +1,6 @@
 import time, board, busio
 import numpy as np
 import adafruit_mlx90640
-
-
-
 from file_utils import save_npy, create_folder_if_absent
 from visualizer import init_heatmap, update_heatmap
 
