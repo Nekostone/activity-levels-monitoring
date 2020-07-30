@@ -31,6 +31,8 @@ Say for a single room, you have data recorded on 14 July 2020 from 8.13am to 09.
 }
 ```
 
+2. The RPI will be sending this dictionary via TCP to the NUC. 
+
 ### Old Implementation
 
 1. Run `displacement_history(files)` on the data collected above, you will get this dictionary which you can save as a .json.
