@@ -3,7 +3,7 @@ import time
 import numpy as np
 import serial
 
-from file_utils import save_npy, create_folder_if_absent
+from file_utils import create_folder_if_absent, save_npy
 from visualizer import init_heatmap, update_heatmap
 
 """
