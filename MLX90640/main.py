@@ -161,10 +161,8 @@ def on_message(client,userdata, msg):
                 analysis_result["room_type"] = RPI_ROOM_TYPE
                 print(analysis_result)
                 to_send = json.dumps(analysis_result)
-                
-                #to_send = json.dumps({'test':len(collected_data)})
                 byte_data = to_send.encode("utf-8")
-                cp.connect(broker, 9999)
+                cp.connect(TCP_addr, 9999)
                 print("len(byte_data): {0}".format(len(byte_data)))
                 cp.send_data(byte_data)
                 cp.close()
@@ -194,14 +192,13 @@ def on_disconnect(client, userdata, flags, rc=0):
 
 BAUD_RATE = 115200
 ARRAY_SHAPE = (24, 32)
-
+TCP_addr = "192.168.0.102"
 broker = "13.229.212.221"
 port = 1883
 
 i2c = busio.I2C(board.SCL, board.SDA, frequency=400000) # setup I2C
 mlx = adafruit_mlx90640.MLX90640(i2c) # begin MLX90640 with I2C comm
 mlx.refresh_rate = adafruit_mlx90640.RefreshRate.REFRESH_2_HZ # set refresh 
-print("set up mlx to i2c")  
 cp = ClientProtocol()
 data = Queue()
 data_times = Queue()
