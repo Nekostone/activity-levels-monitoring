@@ -1,0 +1,3 @@
+paho-mqtt==1.5.0
+schedule==0.6.0
+statemachine==0.1

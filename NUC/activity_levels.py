@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.interpolate
 import scipy.signal
+from datetime import datetime
 
 """
 This script is to be called by the NUC.
@@ -15,51 +16,27 @@ This script is to be called by the NUC.
         The result should be saved somewhere so that analysis can be performed across days, weeks or months.
 """
 
-def stitch_data(dictionaries):
-    """Stitch different dictionary data that are within the same time interval
-    Returns a compiled dictionary containing only one key denotating the time interval.
-
-    AKA it does this:
-    [{key1:[...], key2:[...], key3:[...]}, {key4:[...], key5:[...]}, {key6:[...]}] where the keys fall within a specific 30 min interval
-    ---> {key1:[...], key2:[...], key3:[...], key4:[...], key5:[...], key6:[...]}
-    ---> {30min_interval:[..................]}
+def join_dictionaries(dictionaries):
+    """Stitch different dictionaries to return one compiled dictionary.
 
     Args:
         dictionaries ([dict]): displacement dictionaries from different Rpis
     """
-    #TODO
     biggus_dictus = {}
+    counter = 0
     for dictionary in dictionaries:
-        for key in dictionary:
-            biggus_dictus[key] = dictionary[key]
-    sorted_dict = dict(sorted(biggus_dictus.items()))
+        counter += 1
+        biggus_dictus[str(counter)] = dictionary
 
-    output = {}
-    biggus_listus = []
-    keys = []
-    for i in sorted_dict:
-        keys.append(i)
-        for j in sorted_dict[i]:
-            biggus_listus.append(j)
+    return biggus_dictus
 
-    output[keys[0]] = biggus_listus
-
-    return output
-
-
-def get_activity_levels(data, debug=False):
+def get_activity_levels(data, debug=False, title=""):
     """Produce activity levels plot based on one time interval
-<<<<<<< HEAD
     # Iterate through keys to perform resampling, then stitch together based on timestamps
-=======
-    #TODO: save the out somewhere, compile different outs across days, weeks and months.
->>>>>>> parent of 5bea12b... Formatted 24 hour activity levels
-
     Args:
         data (dict): compiled displacement dictionary for one time interval
         debug (bool): whether the plot is shown for that time interval
     """
-<<<<<<< HEAD
     activity = []
     end_time = 0
     
@@ -87,45 +64,24 @@ def get_activity_levels(data, debug=False):
 
     width = 3600 # Rect function width
     rect  = np.ones(width)
-=======
-
-    width = 300
-    rect = np.ones(width) # rect function for convolution in seconds
-    time_key = list(data.keys())[0] # or replace with any time
-    y = data[time_key] 
-    original = y[0:1500]
-    x = np.linspace(0,np.size(original)-1, np.size(original))
-    
->>>>>>> parent of 5bea12b... Formatted 24 hour activity levels
     # Generate activity data
-    ynew  = scipy.signal.resample(original, 1800)
-    xnew = np.linspace(0,1799,1800)
+    xnew = np.linspace(0,len(activity),len(activity))
 
-    out    = np.dot(np.correlate(ynew, rect, 'valid'), 1/(width/10))
     offset = (width/2)-1
-    xaxis = np.linspace(offset, offset+np.size(out)-1, np.size(out))
+    xaxis = np.linspace(offset, np.size(activity)-offset, np.size(activity)-width+1)
 
-<<<<<<< HEAD
     out = np.dot(np.correlate(activity, rect, 'valid'), 1/(width/10))
     start_time = data[list(data.keys())[0]]['start']
     end_time = data[list(data.keys())[-1]]['end']
 
-=======
-    ogplot = np.dot(np.correlate(y, rect, 'valid'), 1/(width/10))
->>>>>>> parent of 5bea12b... Formatted 24 hour activity levels
 
     if debug:
-        plt.plot(xaxis, ogplot, '--', label='0-padded')
-        plt.plot(xaxis, out, '--', label='Resampled')
-        plt.plot(xnew,y, label='Instant')
+        plt.plot(xaxis, out, '--', label='Activity')
+        plt.plot(xnew, activity, '--', label='Raw')
+        # plt.plot(xaxis, out, '--', label='Resampled')
+        # plt.plot(xnew,y, label='Instant')
         plt.legend(loc='best')
+        plt.title(title)
         plt.grid()
         plt.show()
-<<<<<<< HEAD
         print("Started at {}, ended at {}".format(start_time, end_time))
-=======
-
-
-test_list = [{'0907': ['a', 'b', 'c'], '0906': ['d', 'e', 'f'], '0910': ['g', 'h', 'i']}, {'0901': ['j', 'k', 'l'], '0902': ['m', 'n', 'o']}, {'0904': ['p', 'q', 'r']}]
-print(stitch_data(test_list))
->>>>>>> parent of 5bea12b... Formatted 24 hour activity levels
