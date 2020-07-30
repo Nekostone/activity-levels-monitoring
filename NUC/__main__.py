@@ -1,10 +1,12 @@
 import time
-from   datetime import datetime
-import paho.mqtt.client as mqtt
-import serial
-import numpy as np
+from datetime import datetime
 
-from RoomMonitor import RoomMonitor, LIVING_ROOM, BED_ROOM, KITCHEN, TOILET, OUTSIDE
+import numpy as np
+import paho.mqtt.client as mqtt
+
+from RoomMonitor import (BED_ROOM, KITCHEN, LIVING_ROOM, OUTSIDE, TOILET,
+                         RoomMonitor)
+
 
 def bitfield(n):
     return [1 if digit=='1' else 0 for digit in bin(n)[2:]]
