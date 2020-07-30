@@ -11,8 +11,8 @@ class ServerProtocol:
     def __init__(self, output_dir):
         self.socket = None
         self.output_dir = output_dir
-        self.file_num = 1
         self.file_numbers = {x : 0 for x in ROOM_TYPES}
+	
 
     def listen(self, server_ip, server_port):
         self.socket = socket(AF_INET, SOCK_STREAM)
@@ -52,9 +52,9 @@ class ServerProtocol:
                 if not exists(room_type):
                     os.makedirs(room_type)
                     
-                path_to_save = os.path.join(self.output_dir, room_type, self.file_numbers[room_type]) + ".json"
+                path_to_save = os.path.join(self.output_dir, room_type, str(self.file_numbers[room_type])) + ".json"
                 print("saving to: ", path_to_save)
-                with open(path_to_save, 'w') as outfile:
+                with open(path_to_save, 'w+') as outfile:
                     json.dump(received_json, outfile)
                 
         finally:
@@ -69,8 +69,12 @@ class ServerProtocol:
 
 if __name__ == '__main__':
     output_dir = "data"
+    for x in ROOM_TYPES:
+        foldername = os.path.join(output_dir,x)
+        if not exists(foldername):
+            os.makedirs(foldername)
     if not exists(output_dir):
         os.makedirs(output_dir)
-    sp = ServerProtocol()
+    sp = ServerProtocol(output_dir)
     sp.listen('0.0.0.0', 9999)
     sp.handle_data()
