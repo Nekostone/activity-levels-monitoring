@@ -29,12 +29,18 @@ def job():
         compiled_dictionary = join_dictionaries(dict_list)
         get_activity_levels(compiled_dictionary, debug=True, title=folder)
 
-job() # to test the function directly
+# job() # to test the function directly
 
-# time_to_run_job = "00:00"
 # time_to_run_job = "15:37"
-# schedule.every().day.at(time_to_run_job).do(job)
+time_to_run_job = "00:00"
 
-# while True:
-#     schedule.run_pending()
-#     time.sleep(1)
+def start_schedule():
+    """Starts schedule to run activity_levels analysis script everyday at 0000
+    TODO: add to main.py of NUC
+    """
+    schedule.every().day.at(time_to_run_job).do(job)
+
+    while True:
+        schedule.run_pending() 
+        time.sleep(1)
+
