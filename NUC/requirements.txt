@@ -1,3 +1,15 @@
+cycler==0.10.0
+Cython==0.29.21
+kiwisolver==1.2.0
+matplotlib==3.3.0
+numpy==1.19.1
 paho-mqtt==1.5.0
+Pillow==7.2.0
+pyparsing==2.4.7
+PyQt5==5.9.2
+python-dateutil==2.8.1
+python-statemachine==0.8.0
 schedule==0.6.0
-statemachine==0.1
+scipy==1.5.2
+sip==4.19.8
+six==1.15.0
