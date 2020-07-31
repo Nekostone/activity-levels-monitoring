@@ -68,13 +68,11 @@ def on_message(client,userdata, msg):
         device_type, house_id, current_room = topic.split("/")
 
         m_decode=str(msg.payload.decode("utf-8","ignore"))
-        """
         print("-----")
         print("topic: {0}; m_decode: {1}".format(topic, m_decode))
         print("binary_dict: {0};".format(binary_dict))
         print("Global.last_entered_time: {0}".format(Global.last_entered_time))
         print("Global.last_visited: {0}".format(Global.last_visited))
-        """
         if m_decode == "0" or m_decode == "1":
             binary_dict[current_room] = int(m_decode)
 
