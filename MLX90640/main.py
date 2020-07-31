@@ -6,7 +6,6 @@ import pdb
 from multiprocessing import Process, Queue
 
 import numpy as np
-import paho.mqtt.client as mqtt
 import serial
 
 import adafruit_mlx90640
@@ -30,6 +29,22 @@ with open(config_dir, "r") as readfile:
     global config
     config = json.loads(readfile.read())
 
+BAUD_RATE = 115200
+ARRAY_SHAPE = (24, 32)
+TCP_addr = config["mlx_nuc_ip_to_send_json"]
+broker = config["mqtt_broker_ip"]
+port = config["mqtt_broker_port"]
+RPI_ROOM_TYPE = config["room_type"]
+
+data_collection_process = None  # placeholder to contain process that colelcts data
+
+i2c = busio.I2C(board.SCL, board.SDA, frequency=400000) # setup I2C
+mlx = adafruit_mlx90640.MLX90640(i2c) # begin MLX90640 with I2C comm
+mlx.refresh_rate = adafruit_mlx90640.RefreshRate.REFRESH_2_HZ # set refresh 
+data = Queue()
+data_times = Queue()
+
+
 class ClientProtocol:
 
     def __init__(self):
@@ -46,34 +61,15 @@ class ClientProtocol:
         self.socket = None
 
     def send_data(self, data):
-
         # use struct to make sure we have a consistent endianness on the length
         length = pack('>Q', len(data))
 
         # sendall to make sure it blocks if there's back-pressure on the socket
         self.socket.sendall(length)
         self.socket.sendall(data)
-
         ack = self.socket.recv(1)
 
-        # could handle a bad ack here, but we'll assume it's fine.
-
-
-class MQTTClient:
-    def __init__(self, broker, port):
-
-        client = mqtt.Client()
-        client.on_connect = on_connect
-        client.on_disconnect = on_disconnect
-        print("connecting to broker, ", broker)
-        client.connect(broker, port)
-        self.client = client
-    def subscribe(self, topic):
-        self.client.subscribe(topic)
-        print("Subscribed to topic:", topic)
-    def send_message(self, msg, topic):
-        print("publishing message to: {}".format(topic))
-        self.client.publish(topic, msg)
+cp = ClientProtocol()
 
 def interpolate_values(df):
     """
@@ -113,7 +109,7 @@ def interpolate_values(df):
             df[x][y] = (df[x][y + 1] + df[x + 1][y] + df[x - 1][y] + df[x][y - 1]) / 4
     return df
 
-def collect_data(data, start_time):
+def collect_data(data):
     frame = [0] * 768
     counter = 0
     while True:
@@ -135,35 +131,36 @@ def collect_data(data, start_time):
             # print("Stopping data collection..., num frames collected: {}".format(len(data)))
     
 def on_message(client,userdata, msg):
-    global data_collection_process
-
-    m_decode=str(msg.payload.decode("utf-8","ignore"))
-    
-    # debug message
-    print("=============================")
-    print("message received for {}!".format(RPI_ROOM_TYPE))
-    print("msg: {0}".format(m_decode))
-    
-    # check topic
-    topic=msg.topic
-    print("Topic: " + topic)
-    sensor_type, house_id, room_type = topic.split("/")
-    print("Sensor Type: {}, House_ID: {}, Room_Type: {}".format(sensor_type, house_id, room_type))
- 
-    # check decoded message content and change current MLX shown
-    if m_decode == "0" and room_type == RPI_ROOM_TYPE:
-        if data_collection_process:
-            data_collection_process.terminate()
-            end_time = time.strftime("%Y.%m.%d_%H%M%S",time.localtime(time.time()))
-            collected_data = []
-            while not data.empty():
-                try:
-                    collected_data.append(data.get())
-                except Exception as e:
-                    print(e)
-                    break
-            # print("Sending data array of length: {}".format(len(data)))
-            try:
+    try:
+        global data_collection_process
+        m_decode=str(msg.payload.decode("utf-8","ignore"))
+        
+        # debug message
+        print("=============================")
+        print("message received for {}!".format(RPI_ROOM_TYPE))
+        print("msg: {0}".format(m_decode))
+        
+        # check topic
+        topic=msg.topic
+        print("Topic: " + topic)
+        sensor_type, house_id, room_type = topic.split("/")
+        print("Sensor Type: {}, House_ID: {}, Room_Type: {}".format(sensor_type, house_id, room_type))
+     
+        print("data_collection_process: {0}".format(data_collection_process))
+        # check decoded message content and change current MLX shown
+        if m_decode == "0" and room_type == RPI_ROOM_TYPE:
+            if data_collection_process:
+                data_collection_process.terminate()
+                data_collection_process = None
+                end_time = time.strftime("%Y.%m.%d_%H%M%S",time.localtime(time.time()))
+                collected_data = []
+                while not data.empty():
+                    try:
+                        collected_data.append(data.get())
+                    except Exception as e:
+                        print(e)
+                        break
+                # print("Sending data array of length: {}".format(len(data)))
                 start_time = data_times.get()
                 print("Data collection started at {}, and ended at {}".format(start_time,end_time))
                 # pdb.set_trace()
@@ -179,16 +176,18 @@ def on_message(client,userdata, msg):
                 
                 start_time = None
                 end_time = None
-            except Exception as e:
-                print("error: {0}".format(e))
-    
-            print("Resetted data array, now length: {}".format(collected_data.qsize()))
-    elif m_decode == "1" and room_type == RPI_ROOM_TYPE:
-        # spawns parallel process to write sensor data to .npy files
-        start_time = time.strftime("%Y.%m.%d_%H%M%S",time.localtime(time.time()))
-        data_times.put(start_time)
-        data_collection_process = Process(target=main.collect_data, args=(data, data_times))
-        data_collection_process.start()
+       
+                collected_data.clear() 
+                print("Resetted data array, now length: {}".format(len(collected_data)))
+        elif m_decode == "1" and room_type == RPI_ROOM_TYPE and not data_collection_process:
+            # spawns parallel process to write sensor data to .npy files
+            start_time = time.strftime("%Y.%m.%d_%H%M%S",time.localtime(time.time()))
+            data_times.put(start_time)
+            data_collection_process = Process(target=main.collect_data, args=(data, ))
+            data_collection_process.start()
+    except Exception as e:
+        print(e)
+        pdb.set_trace()
     
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
@@ -200,36 +199,24 @@ def on_disconnect(client, userdata, flags, rc=0):
     print("Disconnected result code " + str(rc))
 
 
-BAUD_RATE = 115200
-ARRAY_SHAPE = (24, 32)
-TCP_addr = config["mlx_nuc_ip_to_send_json"]
-broker = config["mqtt_broker_ip"]
-port = config["mqtt_broker_port"]
 
-i2c = busio.I2C(board.SCL, board.SDA, frequency=400000) # setup I2C
-mlx = adafruit_mlx90640.MLX90640(i2c) # begin MLX90640 with I2C comm
-mlx.refresh_rate = adafruit_mlx90640.RefreshRate.REFRESH_2_HZ # set refresh 
-cp = ClientProtocol()
-data = Queue()
-data_times = Queue()
 
-if True:
-    try: 
-        mqttclient = MQTTClient(broker, port)
-        mqttclient.subscribe(topic=config["mlx_bsp_topic_to_listen"])
-    except Exception as e:
-        print(e)
-    RPI_ROOM_TYPE = config["room_type"]
-    mqttclient.client.on_connect = on_connect
-    mqttclient.client.on_disconnect = on_disconnect
-    mqttclient.client.on_message = on_message  # makes it so that the callback on receiving a message calls on_message() above
-    
-    try:
-        mqttclient.client.publish(config["mlx_topic_to_publish"], "Rpi operational!")
-        mqttclient.client.loop_forever()
-    except InterruptedError as e:
-        if data_collection_process:
-            data_collection_process.terminate()        
-    except Exception as e:
-        print(e)
+import paho.mqtt.client as mqtt
+client = mqtt.Client()
+client.connect(config["mqtt_broker_ip"], config["mqtt_broker_port"])
+client.subscribe(topic=config["mlx_bsp_topic_to_listen"])
+client.on_connect = on_connect
+client.on_disconnect = on_disconnect
+client.on_message = on_message  # makes it so that the callback on receiving a message calls on_message() above
+client.publish(config["mlx_topic_to_publish"], "Rpi operational!")
+
+try:
+    client.loop_forever()
+except Exception as e:
+    print(e)
+"""
+except InterruptedError as e:
+    if data_collection_process:
+        data_collection_process.terminate()
+"""
 
