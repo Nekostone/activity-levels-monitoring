@@ -1,9 +1,0 @@
-{
-    "mlx_bsp_topic_to_listen": "bps/kjhouse/bedroom",
-    "mlx_topic_to_publish": "mlx/kjhouse/bedroom",
-    "mlx_nuc_ip_to_send_json": "192.168.0.102",
-    "mlx_nuc_port_to_send_json": 9999,
-    "mqtt_broker_ip": "192.168.0.102",
-    "mqtt_broker_port": 1883,
-    "room_type": "bedroom"
-}

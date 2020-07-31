@@ -166,7 +166,7 @@ def on_message(client,userdata, msg):
             try:
                 start_time = data_times.get()
                 print("Data collection started at {}, and ended at {}".format(start_time,end_time))
-                pdb.set_trace()
+                # pdb.set_trace()
                 analysis_result = displacement_history(collected_data, start_time, end_time)
                 analysis_result["room_type"] = RPI_ROOM_TYPE
                 print(analysis_result)
