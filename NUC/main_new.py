@@ -8,7 +8,7 @@ import pdb
 
 BED_ROOM = "bedroom"
 LIVING_ROOM = "livingroom"
-KITCHEN = "Kitchen"
+KITCHEN = "kitchen"
 OUTSIDE = "exit"
 TOILET = "toilet"
 ROOMS = [LIVING_ROOM, BED_ROOM, OUTSIDE, TOILET, KITCHEN]
@@ -68,26 +68,34 @@ def on_message(client,userdata, msg):
         device_type, house_id, current_room = topic.split("/")
 
         m_decode=str(msg.payload.decode("utf-8","ignore"))
+        """
         print("-----")
         print("topic: {0}; m_decode: {1}".format(topic, m_decode))
         print("binary_dict: {0};".format(binary_dict))
         print("Global.last_entered_time: {0}".format(Global.last_entered_time))
         print("Global.last_visited: {0}".format(Global.last_visited))
+        """
         if m_decode == "0" or m_decode == "1":
             binary_dict[current_room] = int(m_decode)
 
+        # if the person has moved rooms
         if Global.last_visited != current_room and m_decode == "1":
             if is_valid_transition(current_room):
+                print("nuc - person travels from {0} to {1}".format(Global.last_visited, current_room))
                 Global.last_entered_time = datetime.now()
                 Global.last_visited = current_room
 
                 # activate respective MLX sensors according to the room where the person is in
+                topic = "nuc/kjhouse"
+                client.publish(topic, Global.last_visited)
+                """
                 for room in ROOMS:
                     topic = "/".join([MLX_SENSOR, HOUSE_ID, room])
                     if room == Global.last_visited:
                         client.publish(topic, "1")
                     else:
                         client.publish(topic, "0")
+                """
                 
     except Exception as e:
         print("ERROR: {0}".format(e))
