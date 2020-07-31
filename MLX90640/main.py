@@ -2,6 +2,7 @@ import asyncio
 import math
 import sys
 import time
+import pdb
 from multiprocessing import Process, Queue
 
 import numpy as np
@@ -19,7 +20,15 @@ from socket import *
 from struct import pack
 import json
 
-import queue
+
+# load config
+import os
+import sys
+curr_dir = os.path.dirname(os.path.realpath(__file__))
+config_dir = os.path.join(curr_dir, "config.json")
+with open(config_dir, "r") as readfile:
+    global config
+    config = json.loads(readfile.read())
 
 class ClientProtocol:
 
@@ -53,7 +62,7 @@ class ClientProtocol:
 class MQTTClient:
     def __init__(self, broker, port):
 
-        client = mqtt.Client("teck0")
+        client = mqtt.Client()
         client.on_connect = on_connect
         client.on_disconnect = on_disconnect
         print("connecting to broker, ", broker)
@@ -157,12 +166,13 @@ def on_message(client,userdata, msg):
             try:
                 start_time = data_times.get()
                 print("Data collection started at {}, and ended at {}".format(start_time,end_time))
+                pdb.set_trace()
                 analysis_result = displacement_history(collected_data, start_time, end_time)
                 analysis_result["room_type"] = RPI_ROOM_TYPE
                 print(analysis_result)
                 to_send = json.dumps(analysis_result)
                 byte_data = to_send.encode("utf-8")
-                cp.connect(TCP_addr, 9999)
+                cp.connect(TCP_addr, config["mlx_nuc_port_to_send_json"])
                 print("len(byte_data): {0}".format(len(byte_data)))
                 cp.send_data(byte_data)
                 cp.close()
@@ -170,7 +180,7 @@ def on_message(client,userdata, msg):
                 start_time = None
                 end_time = None
             except Exception as e:
-                print(e)
+                print("error: {0}".format(e))
     
             print("Resetted data array, now length: {}".format(collected_data.qsize()))
     elif m_decode == "1" and room_type == RPI_ROOM_TYPE:
@@ -192,9 +202,9 @@ def on_disconnect(client, userdata, flags, rc=0):
 
 BAUD_RATE = 115200
 ARRAY_SHAPE = (24, 32)
-TCP_addr = "192.168.0.102"
-broker = "13.229.212.221"
-port = 1883
+TCP_addr = config["mlx_nuc_ip_to_send_json"]
+broker = config["mqtt_broker_ip"]
+port = config["mqtt_broker_port"]
 
 i2c = busio.I2C(board.SCL, board.SDA, frequency=400000) # setup I2C
 mlx = adafruit_mlx90640.MLX90640(i2c) # begin MLX90640 with I2C comm
@@ -206,16 +216,16 @@ data_times = Queue()
 if True:
     try: 
         mqttclient = MQTTClient(broker, port)
-        mqttclient.subscribe(topic="NUC/kjhouse/bedroom")
+        mqttclient.subscribe(topic=config["mlx_bsp_topic_to_listen"])
     except Exception as e:
         print(e)
-    RPI_ROOM_TYPE = "bedroom"
+    RPI_ROOM_TYPE = config["room_type"]
     mqttclient.client.on_connect = on_connect
     mqttclient.client.on_disconnect = on_disconnect
     mqttclient.client.on_message = on_message  # makes it so that the callback on receiving a message calls on_message() above
     
     try:
-        mqttclient.client.publish("/".join(["Rpi", "kjhouse", RPI_ROOM_TYPE]), "Rpi operational!")
+        mqttclient.client.publish(config["mlx_topic_to_publish"], "Rpi operational!")
         mqttclient.client.loop_forever()
     except InterruptedError as e:
         if data_collection_process:

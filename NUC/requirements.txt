@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 cycler==0.10.0
 Cython==0.29.21
 kiwisolver==1.2.0
@@ -13,3 +14,10 @@ schedule==0.6.0
 scipy==1.5.2
 sip==4.19.8
 six==1.15.0
+=======
+numpy==1.19.1
+paho-mqtt==1.5.0
+pkg-resources==0.0.0
+pyserial==3.4
+python-statemachine==0.8.0
+>>>>>>> 31985787543643ac62ebcaec61c345c93534fdbc
