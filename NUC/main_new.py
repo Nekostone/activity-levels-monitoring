@@ -5,15 +5,32 @@ import numpy as np
 import math
 import pdb
 
-from multiprocessing import Process, Manager
-manager = Manager()
-Global = manager.Namespace()
 
 BED_ROOM = "bedroom"
 LIVING_ROOM = "livingroom"
 KITCHEN = "Kitchen"
 OUTSIDE = "exit"
 TOILET = "toilet"
+ROOMS = [LIVING_ROOM, BED_ROOM, OUTSIDE, TOILET, KITCHEN]
+VALID_TRANSITIONS = {
+    BED_ROOM: [LIVING_ROOM, TOILET],
+    LIVING_ROOM: [BED_ROOM, KITCHEN, OUTSIDE, TOILET],
+    KITCHEN: [LIVING_ROOM],
+    OUTSIDE: [LIVING_ROOM],
+    TOILET: [LIVING_ROOM, BED_ROOM]
+}
+
+# used for connecting clients, subscribing and publishing to topics
+BROKER = '192.168.0.102' 
+PORT   = 1883
+HOUSE_ID = "kjhouse"
+DEVICE_TYPE = "NUC"
+BPS_SENSOR = "bps"
+MLX_SENSOR = "mlx"
+
+from multiprocessing import Process, Manager
+manager = Manager()
+Global = manager.Namespace()
 
 # to contain the status of all BPS in real time
 binary_dict = manager.dict()
@@ -28,20 +45,12 @@ binary_dict = {
 ROOM_CUTOFF_TIME_MINUTES = {
     BED_ROOM: 60,
     LIVING_ROOM: 60,
-    KITCHEN: 60
+    KITCHEN: 60,
     OUTSIDE: 60,
-    TOILET: 0.25,
+    TOILET: 60,
 }
 Global.last_visited = LIVING_ROOM
 Global.last_entered_time = datetime.now()
-
-VALID_TRANSITIONS = {
-    BED_ROOM: [LIVING_ROOM, TOILET],
-    LIVING_ROOM: [BED_ROOM, KITCHEN, OUTSIDE, TOILET],
-    KITCHEN: [LIVING_ROOM],
-    OUTSIDE: [LIVING_ROOM],
-    TOILET: [LIVING_ROOM, BED_ROOM]
-}
 
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
@@ -59,11 +68,13 @@ def on_message(client,userdata, msg):
         device_type, house_id, current_room = topic.split("/")
 
         m_decode=str(msg.payload.decode("utf-8","ignore"))
+        """
         print("-----")
         print("topic: {0}; m_decode: {1}".format(topic, m_decode))
         print("binary_dict: {0};".format(binary_dict))
         print("Global.last_entered_time: {0}".format(Global.last_entered_time))
         print("Global.last_visited: {0}".format(Global.last_visited))
+        """
         if m_decode == "0" or m_decode == "1":
             binary_dict[current_room] = int(m_decode)
 
@@ -71,22 +82,28 @@ def on_message(client,userdata, msg):
             if is_valid_transition(current_room):
                 Global.last_entered_time = datetime.now()
                 Global.last_visited = current_room
+
+                # activate respective MLX sensors according to the room where the person is in
+                for room in ROOMS:
+                    topic = "/".join([MLX_SENSOR, HOUSE_ID, room])
+                    if room == Global.last_visited:
+                        client.publish(topic, "1")
+                    else:
+                        client.publish(topic, "0")
+                
     except Exception as e:
         print("ERROR: {0}".format(e))
         pdb.set_trace()
 
 def is_valid_transition(current_room):
-    return current_room in VALID_TRANSITIONS[Global.last_visited]:
+    return current_room in VALID_TRANSITIONS[Global.last_visited]
 
 def mqtt_worker():
+
     # to run as a separate process
     import paho.mqtt.client as mqtt
     # MQTT Setup
     client = mqtt.Client()
-
-    # Connect to broker
-    BROKER = '192.168.0.102' 
-    PORT   = 1883
 
     # Attach MQTT Client callback functions 
     client.on_connect    = on_connect
@@ -96,23 +113,14 @@ def mqtt_worker():
     print("Connecting to broker...", BROKER)
     client.connect(BROKER, PORT)
 
-    # Subscribe to topics
-    HOUSE_ID = "kjhouse"
-    DEVICE_TYPE = "NUC"
-    sensors = ["bps", "mlx"]
-    topics = [LIVING_ROOM, BED_ROOM, OUTSIDE, TOILET, KITCHEN]
+    # Subscribe to topics for bps sensors
+    for room in ROOMS:
+        print("Subscribing to ", room)
+        print("/".join([BPS_SENSOR, HOUSE_ID, room]))
+        client.subscribe("/".join([BPS_SENSOR, HOUSE_ID, room]))
 
-    for sensor in sensors:
-        for topic in topics:
-            print("Subscribing to ", topic)
-            print("/".join([sensor, HOUSE_ID, topic]))
-            client.subscribe("/".join([sensor, HOUSE_ID, topic]))
-
-    client.publish("/".join([DEVICE_TYPE, HOUSE_ID, topic]), "Started NUC!")
-
+    client.publish("/".join([DEVICE_TYPE, HOUSE_ID, room]), "Started NUC!")
     client.loop_forever()
-
-# print("while true - id(binary_dict): {0}".format(id(binary_dict)))
 
 mqtt_worker_process = Process(target=mqtt_worker)
 mqtt_worker_process.start()

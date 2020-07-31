@@ -206,7 +206,7 @@ data_times = Queue()
 if True:
     try: 
         mqttclient = MQTTClient(broker, port)
-        mqttclient.subscribe(topic="NUC/kjhouse/bedroom")
+        mqttclient.subscribe(topic="mlx/kjhouse/bedroom")
     except Exception as e:
         print(e)
     RPI_ROOM_TYPE = "bedroom"
