@@ -22,6 +22,8 @@ Background Subtraction with Godec
 
 def create_godec_input(files, normalize=True, rgb=False):
     i = 0
+    M = None
+    frame = None
     for f in files:
         if type(f) == str:
             if rgb:
@@ -40,6 +42,7 @@ def create_godec_input(files, normalize=True, rgb=False):
         else:
             M = column_stack((M, F))
         i+=1
+
     return M, frame
 
 def bs_godec(files, debug=False, gif_name=False, normalize=True, rgb=False):

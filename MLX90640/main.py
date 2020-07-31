@@ -116,7 +116,7 @@ def collect_data(data):
         try:
             mlx.getFrame(frame)  #  get the mlx values and put them into the array we just created
             array = np.array(frame) 
-            if array.shape[0] == ARRAY_SHAPE[0] * ARRAY_SHAPE[1]:
+            if np.sum(array) > 0:
                 df = np.reshape(array.astype(float), ARRAY_SHAPE)
                 df = interpolate_values(df)
                 data.put(df)
@@ -134,39 +134,50 @@ def on_message(client,userdata, msg):
     try:
         global data_collection_process
         m_decode=str(msg.payload.decode("utf-8","ignore"))
-        
+       
+        """ 
         # debug message
         print("=============================")
         print("message received for {}!".format(RPI_ROOM_TYPE))
         print("msg: {0}".format(m_decode))
+        """
         
         # check topic
         topic=msg.topic
-        print("Topic: " + topic)
-        sensor_type, house_id, room_type = topic.split("/")
-        print("Sensor Type: {}, House_ID: {}, Room_Type: {}".format(sensor_type, house_id, room_type))
+        # print("Topic: " + topic)
+        sensor_type, house_id = topic.split("/")
+        # print("Sensor Type: {}, House_ID: {}".format(sensor_type, house_id))
      
-        print("data_collection_process: {0}".format(data_collection_process))
+        # print("data_collection_process: {0}".format(data_collection_process))
         # check decoded message content and change current MLX shown
-        if m_decode == "0" and room_type == RPI_ROOM_TYPE:
-            if data_collection_process:
-                data_collection_process.terminate()
-                data_collection_process = None
-                end_time = time.strftime("%Y.%m.%d_%H%M%S",time.localtime(time.time()))
-                collected_data = []
-                while not data.empty():
-                    try:
-                        collected_data.append(data.get())
-                    except Exception as e:
-                        print(e)
-                        break
-                # print("Sending data array of length: {}".format(len(data)))
-                start_time = data_times.get()
-                print("Data collection started at {}, and ended at {}".format(start_time,end_time))
-                # pdb.set_trace()
+        if m_decode == RPI_ROOM_TYPE and not data_collection_process:
+            print("start mlx collection")
+            # spawns parallel process to write sensor data to .npy files
+            start_time = time.strftime("%Y.%m.%d_%H%M%S",time.localtime(time.time()))
+            data_times.put(start_time)
+            data_collection_process = Process(target=main.collect_data, args=(data, ))
+            data_collection_process.start()
+        elif data_collection_process:
+            print("end mlx collection")
+            data_collection_process.terminate()
+            data_collection_process = None
+            end_time = time.strftime("%Y.%m.%d_%H%M%S",time.localtime(time.time()))
+            collected_data = []
+            while not data.empty():
+                try:
+                    collected_data.append(data.get())
+                except Exception as e:
+                    print(e)
+                    break
+            # print("Sending data array of length: {}".format(len(data)))
+            start_time = data_times.get()
+            print("Data collection started at {}, and ended at {}".format(start_time,end_time))
+            # pdb.set_trace()
+            print("len(collected_data): {0}".format(len(collected_data)))
+            if len(collected_data) != 0:
                 analysis_result = displacement_history(collected_data, start_time, end_time)
                 analysis_result["room_type"] = RPI_ROOM_TYPE
-                print(analysis_result)
+                print("analysis_result: {0}".format(analysis_result))
                 to_send = json.dumps(analysis_result)
                 byte_data = to_send.encode("utf-8")
                 cp.connect(TCP_addr, config["mlx_nuc_port_to_send_json"])
@@ -179,15 +190,14 @@ def on_message(client,userdata, msg):
        
                 collected_data.clear() 
                 print("Resetted data array, now length: {}".format(len(collected_data)))
-        elif m_decode == "1" and room_type == RPI_ROOM_TYPE and not data_collection_process:
-            # spawns parallel process to write sensor data to .npy files
-            start_time = time.strftime("%Y.%m.%d_%H%M%S",time.localtime(time.time()))
-            data_times.put(start_time)
-            data_collection_process = Process(target=main.collect_data, args=(data, ))
-            data_collection_process.start()
+    except InterruptedError:
+        if data_collection_process:
+            data_collection_process.terminate()
+            exit(0)
     except Exception as e:
         print(e)
         pdb.set_trace()
+
     
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
@@ -204,7 +214,7 @@ def on_disconnect(client, userdata, flags, rc=0):
 import paho.mqtt.client as mqtt
 client = mqtt.Client()
 client.connect(config["mqtt_broker_ip"], config["mqtt_broker_port"])
-client.subscribe(topic=config["mlx_bsp_topic_to_listen"])
+client.subscribe(topic=config["mlx_topic_to_listen"])
 client.on_connect = on_connect
 client.on_disconnect = on_disconnect
 client.on_message = on_message  # makes it so that the callback on receiving a message calls on_message() above
