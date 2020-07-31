@@ -26,18 +26,21 @@ binary_dict = {
 }
 # if the person has stayed in a particular room for more than the cutoff time for that room, a notification is sent to the MQTT
 ROOM_CUTOFF_TIME_MINUTES = {
-    LIVING_ROOM: 60,
     BED_ROOM: 60,
+    LIVING_ROOM: 60,
+    KITCHEN: 60
     OUTSIDE: 60,
     TOILET: 0.25,
-    KITCHEN: 60
 }
 Global.last_visited = LIVING_ROOM
 Global.last_entered_time = datetime.now()
 
 VALID_TRANSITIONS = {
     BED_ROOM: [LIVING_ROOM, TOILET],
-    LIVING_ROOM: [BED_ROOM, ]
+    LIVING_ROOM: [BED_ROOM, KITCHEN, OUTSIDE, TOILET],
+    KITCHEN: [LIVING_ROOM],
+    OUTSIDE: [LIVING_ROOM],
+    TOILET: [LIVING_ROOM, BED_ROOM]
 }
 
 def on_connect(client, userdata, flags, rc):
@@ -65,15 +68,15 @@ def on_message(client,userdata, msg):
             binary_dict[current_room] = int(m_decode)
 
         if Global.last_visited != current_room and m_decode == "1":
-            Global.last_entered_time = datetime.now()
-            Global.last_visited = current_room
+            if is_valid_transition(current_room):
+                Global.last_entered_time = datetime.now()
+                Global.last_visited = current_room
     except Exception as e:
         print("ERROR: {0}".format(e))
         pdb.set_trace()
 
-def is_valid_trainsition(current_room):
-    if Global.last_visited in VALID_TRANSITIONS and current_duration in VALID_TRANSITIO
-    
+def is_valid_transition(current_room):
+    return current_room in VALID_TRANSITIONS[Global.last_visited]:
 
 def mqtt_worker():
     # to run as a separate process
