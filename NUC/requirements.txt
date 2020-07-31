@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 cycler==0.10.0
 Cython==0.29.21
 kiwisolver==1.2.0
@@ -21,3 +22,8 @@ pkg-resources==0.0.0
 pyserial==3.4
 python-statemachine==0.8.0
 >>>>>>> 31985787543643ac62ebcaec61c345c93534fdbc
+=======
+paho-mqtt==1.5.0
+schedule==0.6.0
+statemachine==0.1
+>>>>>>> parent of adc3452... updates to duration checking code
