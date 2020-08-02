@@ -1,8 +1,12 @@
+import json
+import os
+from datetime import datetime
+
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.interpolate
 import scipy.signal
-from datetime import datetime
+
 
 """
 This script is to be called by the NUC.
@@ -30,7 +34,7 @@ def join_dictionaries(dictionaries):
 
     return biggus_dictus
 
-def get_activity_levels(data, debug=False, title=""):
+def get_activity_levels(data, debug=False, name=""):
     """Produce activity levels plot based on one time interval
     # Iterate through keys to perform resampling, then stitch together based on timestamps
     Args:
@@ -39,6 +43,7 @@ def get_activity_levels(data, debug=False, title=""):
     """
     activity = []
     end_time = 0
+    total_frames = 0
     
     for i in data.keys():
         data[i]['frames'] = scipy.signal.resample(np.array(data[i]['frames']), int(data[i]['timeElapsedInSeconds']))
@@ -58,6 +63,7 @@ def get_activity_levels(data, debug=False, title=""):
             activity = activity + zeropad #add zeros for missing frames from start of the day
             
         activity = activity + list(data[i]['frames'])
+        total_frames += data[i]['numFrames']
     if len(activity) < 86399:
         activity = activity + list(np.zeros(86399-len(activity)))
     activity = np.array(activity) # Convert list to nparray
@@ -73,15 +79,28 @@ def get_activity_levels(data, debug=False, title=""):
     out = np.dot(np.correlate(activity, rect, 'valid'), 1/(width/10))
     start_time = data[list(data.keys())[0]]['start']
     end_time = data[list(data.keys())[-1]]['end']
-
+    date, room = name.split(" ")
 
     if debug:
         plt.plot(xaxis, out, '--', label='Activity')
         plt.plot(xnew, activity, '--', label='Raw')
-        # plt.plot(xaxis, out, '--', label='Resampled')
-        # plt.plot(xnew,y, label='Instant')
         plt.legend(loc='best')
-        plt.title(title)
+        plt.title(name)
         plt.grid()
         plt.show()
         print("Started at {}, ended at {}".format(start_time, end_time))
+    
+    folder = os.path.join("analysis_results", date)
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+    
+    path_to_save = os.path.join("analysis_results", date, room+".json")
+    print("saving analysis result to: ", path_to_save)
+    with open(path_to_save, 'w+') as outfile:
+        dictionary = {
+            "start": start_time,
+            "end": end_time,
+            "numFrames": total_frames,
+            "out": list(out)
+        }
+        json.dump(dictionary, outfile)

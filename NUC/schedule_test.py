@@ -5,6 +5,7 @@ from os.path import basename, isdir, isfile, join
 
 import schedule
 from activity_levels import get_activity_levels, join_dictionaries
+import datetime
 
 data_path = "test_json"
 
@@ -27,20 +28,22 @@ def job():
                 dictionary = json.load(json_file)
                 dict_list.append(dictionary)
         compiled_dictionary = join_dictionaries(dict_list)
-        get_activity_levels(compiled_dictionary, debug=True, title=folder)
+        
+        date_obj = datetime.datetime.now() - datetime.timedelta(days = 1)
+        date = datetime.datetime.strftime(date_obj, "%Y.%m.%d")
+        get_activity_levels(compiled_dictionary, debug=True, name=date + " " + folder)
 
-# job() # to test the function directly
+job() # to test the function directly
 
 # time_to_run_job = "15:37"
-time_to_run_job = "00:00"
+# time_to_run_job = "00:00"
 
-def start_schedule():
-    """Starts schedule to run activity_levels analysis script everyday at 0000
-    TODO: add to main.py of NUC
-    """
-    schedule.every().day.at(time_to_run_job).do(job)
+# def start_schedule():
+#     """Starts schedule to run activity_levels analysis script everyday at 0000
+#     TODO: add to main.py of NUC
+#     """
+#     schedule.every().day.at(time_to_run_job).do(job)
 
-    while True:
-        schedule.run_pending() 
-        time.sleep(1)
-
+#     while True:
+#         schedule.run_pending() 
+#         time.sleep(1)
